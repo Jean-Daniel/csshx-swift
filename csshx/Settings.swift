@@ -16,6 +16,7 @@ protocol ExpressibleByStringArgument {
 
 extension Bool: ExpressibleByStringArgument {}
 extension Int: ExpressibleByStringArgument {}
+extension Int32: ExpressibleByStringArgument {}
 extension String: ExpressibleByStringArgument {}
 
 // MARK: CGRect
@@ -82,7 +83,7 @@ private func parse<Ty>(_ value: String) throws -> Ty where Ty: ExpressibleByStri
 }
 
 // MARK: Color
-struct Color {
+struct Color: Sendable {
   let red: CGFloat
   let green: CGFloat
   let blue: CGFloat
@@ -171,9 +172,9 @@ struct Settings {
   var sshArgs: String? = nil
 //  remote_command
 //  launchpid
-//  login
+  var login: String?
   var screen: Int = 0
-  var space: Int = 0
+  var space: Int32 = -1
   var debug: Int = 0
   var sessionMax = 256
 
@@ -181,17 +182,17 @@ struct Settings {
   var pingTimeout: Int = 2
 //  slavehost
 //  slaveid
-  var socket: String? = nil
+  var socket: String = ""
 
   var ssh: String = "ssh"
   var interleave: Int = 0
 
   var controllerSettingsSet: String? = nil
-  var managedSettingsSet: String? = nil
+  var hostSettingsSet: String? = nil
 
   var sorthosts: Bool = false
 
-  mutating func set(_ arg: Arg, value: String) throws {
+  fileprivate mutating func set(_ arg: Arg, value: String) throws {
     try arg.setter(&self, value)
   }
 }
@@ -213,14 +214,14 @@ extension Settings {
     "color_setbounds_foreground": Arg(\Settings.setboundsForeground),
     "color_setbounds_background": Arg(\Settings.setboundsBackground),
 
-    "tile_x": Arg(\Settings.rows),
-    "tile_y": Arg(\Settings.columns),
+    "tile_x": Arg(\Settings.columns),
+    "tile_y": Arg(\Settings.rows),
 
     "ssh_args": Arg(\Settings.sshArgs),
 
 //    "remote_command": \Settings.,
 //    "launchpid": \Settings.,
-//    "login": \Settings.,
+    "login": Arg(\Settings.login),
 
     "master_height": Arg(\Settings.controllerHeight),
     "screen_bounds": Arg(\Settings.screenBounds),
@@ -237,8 +238,9 @@ extension Settings {
     "ping_timeout": Arg(\Settings.pingTimeout),
     "ssh": Arg(\Settings.ssh),
     "interleave": Arg(\Settings.interleave),
+    
     "master_settings_set": Arg(\Settings.controllerSettingsSet),
-    "slave_settings_set": Arg(\Settings.managedSettingsSet),
+    "slave_settings_set": Arg(\Settings.hostSettingsSet),
 
     "sorthosts": Arg(\Settings.sorthosts),
   ]

@@ -515,11 +515,7 @@ sub open_window {
     # don't exec if debugging so we can see errors
     # $cmd = "clear && exec $cmd" unless $config->debug;
     unless ($config->debug) {
-       if (get_shell =~ /fish$/) {
-           $cmd = "clear; and exec $cmd" unless $config->debug;
-       } else {
-           $cmd = "clear && exec $cmd" unless $config->debug;
-       }
+      $cmd = "clear && exec $cmd" unless $config->debug;
     }
 
     # Hide the command from any shell history

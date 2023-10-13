@@ -50,6 +50,12 @@
             ReferencedContainer = "container:csshx.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-- host --slavehost root@xenonium.com --socket /tmp --slaveid 1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

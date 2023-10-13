@@ -7,9 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1B1E7FDB2ACCA2E6009BA975 /* csshx.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1E7FDA2ACCA2E6009BA975 /* csshx.swift */; };
+		1B1840C22AD59A9900A6335B /* Signal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1840C12AD59A9900A6335B /* Signal.swift */; };
+		1B1840C52AD59AE300A6335B /* CsshX.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1840C42AD59AE300A6335B /* CsshX.swift */; };
+		1B1840CD2AD59CBB00A6335B /* Terminal.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B1840CC2AD59CBB00A6335B /* Terminal.m */; };
+		1B1840D02AD59DB000A6335B /* ScriptingBridge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1B1840CF2AD59DB000A6335B /* ScriptingBridge.framework */; };
+		1B1E7FDB2ACCA2E6009BA975 /* Launcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1E7FDA2ACCA2E6009BA975 /* Launcher.swift */; };
 		1B1E7FDE2ACCA391009BA975 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 1B1E7FDD2ACCA391009BA975 /* ArgumentParser */; };
+		1B22989B2AD8818500DB0C31 /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B22989A2AD8818500DB0C31 /* Socket.swift */; };
 		1B4245822AD4952700137DD8 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4245812AD4952700137DD8 /* Settings.swift */; };
+		1B5F44012AD8A076003045E6 /* Bridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B5F44002AD8A076003045E6 /* Bridge.m */; };
+		1B71D8B72AD764D0005CC0FE /* Host.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B71D8B62AD764D0005CC0FE /* Host.swift */; };
+		1B71D8B92AD76535005CC0FE /* Misc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B71D8B82AD76535005CC0FE /* Misc.swift */; };
+		1B8E5DBE2AD5BE4700263910 /* Terminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8E5DBD2AD5BE4700263910 /* Terminal.swift */; };
+		1B8E5DC02AD5EAAF00263910 /* Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8E5DBF2AD5EAAF00263910 /* Window.swift */; };
+		1B9CB9C92AD724D70053DF33 /* Controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9CB9C82AD724D70053DF33 /* Controller.swift */; };
 		1BA8237B2AD0A032006913CF /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA8237A2AD0A032006913CF /* Config.swift */; };
 		1BD4EB692AD1403B00084A59 /* Timeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD4EB682AD1403B00084A59 /* Timeout.swift */; };
 /* End PBXBuildFile section */
@@ -27,10 +38,27 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1B021A682AD9510E00255894 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		1B1840C12AD59A9900A6335B /* Signal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Signal.swift; sourceTree = "<group>"; };
+		1B1840C42AD59AE300A6335B /* CsshX.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CsshX.swift; sourceTree = "<group>"; };
+		1B1840C62AD59BD500A6335B /* csshx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "csshx-Bridging-Header.h"; sourceTree = "<group>"; };
+		1B1840CB2AD59C3E00A6335B /* Terminal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Terminal.h; sourceTree = "<group>"; };
+		1B1840CC2AD59CBB00A6335B /* Terminal.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Terminal.m; sourceTree = "<group>"; };
+		1B1840CF2AD59DB000A6335B /* ScriptingBridge.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScriptingBridge.framework; path = System/Library/Frameworks/ScriptingBridge.framework; sourceTree = SDKROOT; };
 		1B1E7FD02ACCA2D1009BA975 /* csshx */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = csshx; sourceTree = BUILT_PRODUCTS_DIR; };
-		1B1E7FDA2ACCA2E6009BA975 /* csshx.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = csshx.swift; sourceTree = "<group>"; };
+		1B1E7FDA2ACCA2E6009BA975 /* Launcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Launcher.swift; sourceTree = "<group>"; };
 		1B1E7FDF2ACCA607009BA975 /* csshX */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = csshX; sourceTree = "<group>"; };
+		1B22989A2AD8818500DB0C31 /* Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Socket.swift; sourceTree = "<group>"; };
 		1B4245812AD4952700137DD8 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		1B5F44002AD8A076003045E6 /* Bridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Bridge.m; sourceTree = "<group>"; };
+		1B5F44022AD8A3D5003045E6 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Bridge.h; sourceTree = "<group>"; };
+		1B71D8B62AD764D0005CC0FE /* Host.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Host.swift; sourceTree = "<group>"; };
+		1B71D8B82AD76535005CC0FE /* Misc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Misc.swift; sourceTree = "<group>"; };
+		1B8E5DBD2AD5BE4700263910 /* Terminal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Terminal.swift; sourceTree = "<group>"; };
+		1B8E5DBF2AD5EAAF00263910 /* Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Window.swift; sourceTree = "<group>"; };
+		1B8E5DC12AD5F4FA00263910 /* csshx.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = csshx.entitlements; sourceTree = "<group>"; };
+		1B8E5DC22AD6018300263910 /* CGSPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CGSPrivate.h; sourceTree = "<group>"; };
+		1B9CB9C82AD724D70053DF33 /* Controller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controller.swift; sourceTree = "<group>"; };
 		1BA8237A2AD0A032006913CF /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		1BD4EB682AD1403B00084A59 /* Timeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Timeout.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -40,6 +68,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1B1840D02AD59DB000A6335B /* ScriptingBridge.framework in Frameworks */,
 				1B1E7FDE2ACCA391009BA975 /* ArgumentParser in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -47,11 +76,42 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1B1840C02AD59A7F00A6335B /* utils */ = {
+			isa = PBXGroup;
+			children = (
+				1BD4EB682AD1403B00084A59 /* Timeout.swift */,
+				1B1840C12AD59A9900A6335B /* Signal.swift */,
+				1B8E5DBD2AD5BE4700263910 /* Terminal.swift */,
+				1B8E5DBF2AD5EAAF00263910 /* Window.swift */,
+				1B71D8B82AD76535005CC0FE /* Misc.swift */,
+				1B22989A2AD8818500DB0C31 /* Socket.swift */,
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
+		1B1840C32AD59AD800A6335B /* cmd */ = {
+			isa = PBXGroup;
+			children = (
+				1B1840C42AD59AE300A6335B /* CsshX.swift */,
+			);
+			path = cmd;
+			sourceTree = "<group>";
+		};
+		1B1840CE2AD59DB000A6335B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1B1840CF2AD59DB000A6335B /* ScriptingBridge.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		1B1E7FC72ACCA2D1009BA975 = {
 			isa = PBXGroup;
 			children = (
+				1B021A682AD9510E00255894 /* README.md */,
 				1B1E7FD22ACCA2D1009BA975 /* csshx */,
 				1B1E7FD12ACCA2D1009BA975 /* Products */,
+				1B1840CE2AD59DB000A6335B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -67,12 +127,30 @@
 			isa = PBXGroup;
 			children = (
 				1B1E7FDF2ACCA607009BA975 /* csshX */,
-				1B1E7FDA2ACCA2E6009BA975 /* csshx.swift */,
+				1B8E5DC12AD5F4FA00263910 /* csshx.entitlements */,
+				1B8E5DBA2AD5A2FC00263910 /* controller */,
+				1B1840C32AD59AD800A6335B /* cmd */,
+				1B1840C02AD59A7F00A6335B /* utils */,
+				1B1E7FDA2ACCA2E6009BA975 /* Launcher.swift */,
 				1BA8237A2AD0A032006913CF /* Config.swift */,
-				1BD4EB682AD1403B00084A59 /* Timeout.swift */,
 				1B4245812AD4952700137DD8 /* Settings.swift */,
+				1B8E5DC22AD6018300263910 /* CGSPrivate.h */,
+				1B1840CB2AD59C3E00A6335B /* Terminal.h */,
+				1B5F44022AD8A3D5003045E6 /* Bridge.h */,
+				1B5F44002AD8A076003045E6 /* Bridge.m */,
+				1B1840CC2AD59CBB00A6335B /* Terminal.m */,
+				1B1840C62AD59BD500A6335B /* csshx-Bridging-Header.h */,
 			);
 			path = csshx;
+			sourceTree = "<group>";
+		};
+		1B8E5DBA2AD5A2FC00263910 /* controller */ = {
+			isa = PBXGroup;
+			children = (
+				1B9CB9C82AD724D70053DF33 /* Controller.swift */,
+				1B71D8B62AD764D0005CC0FE /* Host.swift */,
+			);
+			path = controller;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -110,6 +188,7 @@
 				TargetAttributes = {
 					1B1E7FCF2ACCA2D1009BA975 = {
 						CreatedOnToolsVersion = 15.0;
+						LastSwiftMigration = 1500;
 					};
 				};
 			};
@@ -139,9 +218,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1B1E7FDB2ACCA2E6009BA975 /* csshx.swift in Sources */,
+				1B1E7FDB2ACCA2E6009BA975 /* Launcher.swift in Sources */,
+				1B8E5DC02AD5EAAF00263910 /* Window.swift in Sources */,
+				1B5F44012AD8A076003045E6 /* Bridge.m in Sources */,
+				1B9CB9C92AD724D70053DF33 /* Controller.swift in Sources */,
+				1B71D8B72AD764D0005CC0FE /* Host.swift in Sources */,
+				1B1840C52AD59AE300A6335B /* CsshX.swift in Sources */,
+				1B71D8B92AD76535005CC0FE /* Misc.swift in Sources */,
+				1B1840C22AD59A9900A6335B /* Signal.swift in Sources */,
 				1BA8237B2AD0A032006913CF /* Config.swift in Sources */,
+				1B22989B2AD8818500DB0C31 /* Socket.swift in Sources */,
 				1B4245822AD4952700137DD8 /* Settings.swift in Sources */,
+				1B8E5DBE2AD5BE4700263910 /* Terminal.swift in Sources */,
+				1B1840CD2AD59CBB00A6335B /* Terminal.m in Sources */,
 				1BD4EB692AD1403B00084A59 /* Timeout.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -270,10 +359,16 @@
 		1B1E7FD82ACCA2D1009BA975 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = csshx/csshx.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 3DT6DNJE39;
 				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xenonium.csshx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "csshx/csshx-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -281,10 +376,15 @@
 		1B1E7FD92ACCA2D1009BA975 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = csshx/csshx.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 3DT6DNJE39;
 				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xenonium.csshx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "csshx/csshx-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
