@@ -8,7 +8,7 @@
 import Foundation
 import ArgumentParser
 
-extension Launcher {
+extension Csshx {
   struct Controller: AsyncParsableCommand {
 
     @Option var socket: String
@@ -24,7 +24,22 @@ extension Launcher {
         }
       }
 
-      // Start listening on 
+      let listener = try IOListener.listen(socket: socket)
+      defer { listener.close() }
+
+      for try await connection in listener.connections() {
+        print("on open connection")
+        Task {
+          // Read and dispatch input
+          print("waiting data")
+          for try await data in connection.read() {
+            try await connection.write(data)
+          }
+          connection.close()
+        }
+      }
+
+      // Start listening on
       /*
 
        my $need_redraw = 1;

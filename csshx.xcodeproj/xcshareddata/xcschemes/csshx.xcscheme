@@ -52,7 +52,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-- host --slavehost root@xenonium.com --socket /tmp --slaveid 1"
+            argument = "-- host --ssh ssh  --socket /tmp/csshx.sock --slaveid 1 root@xenonium.com"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

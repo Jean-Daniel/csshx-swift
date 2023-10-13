@@ -10,8 +10,19 @@
 
 #import <Foundation/Foundation.h>
 
-@interface TTY : NSObject
+@interface Bridge : NSObject
 + (BOOL)tiocsti:(uint8_t)c error:(NSError **)error;
+
+// Create unix socket
+
++ (BOOL)setNonBlocking:(dispatch_fd_t)socket error:(NSError **)error;
+
++ (dispatch_fd_t)bind:(NSString *)path error:(NSError **)error __attribute__((swift_error(zero_result)));
+
++ (dispatch_fd_t)connect:(NSString *)path error:(NSError **)error __attribute__((swift_error(zero_result)));
+
 @end
+
+
 
 #endif /* Bridge_h */

@@ -8,8 +8,8 @@
 import ArgumentParser
 import Foundation
 
-extension Launcher {
-  struct CsshX: AsyncParsableCommand {
+extension Csshx {
+  struct Launcher: AsyncParsableCommand {
 
     static var configuration = CommandConfiguration(
       commandName: "csshx",
@@ -81,58 +81,58 @@ extension Launcher {
         Self.exit(withError: error)
       }
 
-      var hosts = hosts
-      if (settings.sorthosts) {
-        hosts.sort()
-      }
-
-      if (settings.interleave > 1) {
-        var cur = 0
-        var wrap = 0
-        var new_hosts = [String]()
-        for _ in 0..<hosts.count {
-          new_hosts.append(hosts[cur])
-          cur += settings.interleave
-          if (cur >= hosts.count) {
-            wrap += 1
-            cur = wrap
-          }
-        }
-        hosts = new_hosts
-      }
-
-      var hostId = 0
-      var greeting = "launcher\n\(controller.windowId),\(controller.tabIdx)\n"
-
-      for host in hosts {
-        // my $rem_command = $host->command || $config->remote_command || '';
-        hostId += 1
-
-        let hostTab = try openTab(host: host, id: hostId, settings: settings)
-        if (settings.space >= 0) {
-          hostTab.space = settings.space
-        }
-
-//        if let set = settings.hostSettingsSet {
-//          $slave->set_settings_set($config->slave_settings_set)
+//      var hosts = hosts
+//      if (settings.sorthosts) {
+//        hosts.sort()
+//      }
+//
+//      if (settings.interleave > 1) {
+//        var cur = 0
+//        var wrap = 0
+//        var new_hosts = [String]()
+//        for _ in 0..<hosts.count {
+//          new_hosts.append(hosts[cur])
+//          cur += settings.interleave
+//          if (cur >= hosts.count) {
+//            wrap += 1
+//            cur = wrap
+//          }
 //        }
-
-        greeting += "\(hostId) \(hostTab.windowId),\(hostTab.tabIdx)\n";
-      }
-      greeting += "done\n"
-
-      // Sending greeting and tear down
-      guard let greetingBytes = greeting.data(using: .utf8) else {
-        throw POSIXError(.EINVAL)
-      }
-
-      let client = try await IOClient.connect(socket: settings.socket)
-
-      // tell the master the laucher is done
-      try await client.write(data: greetingBytes)
-
-      // and exit
-      await client.close()
+//        hosts = new_hosts
+//      }
+//
+//      var hostId = 0
+//      var greeting = "launcher\n\(controller.windowId),\(controller.tabIdx)\n"
+//
+//      for host in hosts {
+//        // my $rem_command = $host->command || $config->remote_command || '';
+//        hostId += 1
+//
+//        let hostTab = try openTab(host: host, id: hostId, settings: settings)
+//        if (settings.space >= 0) {
+//          hostTab.space = settings.space
+//        }
+//
+////        if let set = settings.hostSettingsSet {
+////          $slave->set_settings_set($config->slave_settings_set)
+////        }
+//
+//        greeting += "\(hostId) \(hostTab.windowId),\(hostTab.tabIdx)\n";
+//      }
+//      greeting += "done\n"
+//
+//      // Sending greeting and tear down
+//      guard let greetingBytes = greeting.data(using: .utf8) else {
+//        throw POSIXError(.EINVAL)
+//      }
+//
+//      let client = try await IOClient.connect(socket: settings.socket)
+//
+//      // tell the master the laucher is done
+//      try await client.write(data: greetingBytes)
+//
+//      // and exit
+//      await client.close()
     }
 
     private func openController(settings cfg: Settings) throws -> Terminal.Tab {

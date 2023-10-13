@@ -61,3 +61,14 @@ extension Sequence where Element == String {
     return try body(cstrings)
   }
 }
+
+extension POSIXError {
+
+  static var errno: POSIXError {
+    POSIXError(errno: Darwin.errno)
+  }
+
+  init(errno: Int32) {
+    self.init(POSIXErrorCode(rawValue: errno) ?? .EINVAL)
+  }
+}

@@ -7,13 +7,13 @@
 
 import Dispatch
 
-private func waitFor<Source: DispatchSourceProtocol>(source: Source, event: String) async {
+func waitFor<Source: DispatchSourceProtocol>(source: Source, event: String) async {
   // Add Task Cancellation handler to cancel the source when the Task is cancelled.
   await withTaskCancellationHandler {
     // If task already cancelled, the cancel handler may have already been invoked
     guard !source.isCancelled else {
       // A DispatchSource must be resume at least once, even if cancelled
-      source.resume()
+      source.activate()
       return
     }
 
@@ -30,7 +30,7 @@ private func waitFor<Source: DispatchSourceProtocol>(source: Source, event: Stri
       }
       // Start the dispatch source.
       logger.debug("waiting for \(event)")
-      source.resume()
+      source.activate()
     }
   } onCancel: {
     logger.debug("cancelling handler for \(event)")
@@ -42,9 +42,14 @@ func waitFor(signal: Int32) async {
   await waitFor(source: source, event: "signal \(signal)")
 }
 
-func waitFor(pid: pid_t) async {
+func waitFor(pid: pid_t) async -> Int {
   let source = DispatchSource.makeProcessSource(identifier: pid, eventMask: .exit)
   await waitFor(source: source, event: "process \(pid) exit")
+  var s: Int32 = 0
+  if waitpid(pid, &s, WNOHANG) > 0 {
+    return Int(s)
+  }
+  return 0
 }
 
 extension DispatchSource {
@@ -57,7 +62,7 @@ extension DispatchSource {
       continuation.onTermination = { cause in
         source.cancel()
       }
-      source.resume()
+      source.activate()
     }
   }
 }

@@ -8,10 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		1B1840C22AD59A9900A6335B /* Signal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1840C12AD59A9900A6335B /* Signal.swift */; };
-		1B1840C52AD59AE300A6335B /* CsshX.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1840C42AD59AE300A6335B /* CsshX.swift */; };
+		1B1840C52AD59AE300A6335B /* Launcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1840C42AD59AE300A6335B /* Launcher.swift */; };
 		1B1840CD2AD59CBB00A6335B /* Terminal.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B1840CC2AD59CBB00A6335B /* Terminal.m */; };
 		1B1840D02AD59DB000A6335B /* ScriptingBridge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1B1840CF2AD59DB000A6335B /* ScriptingBridge.framework */; };
-		1B1E7FDB2ACCA2E6009BA975 /* Launcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1E7FDA2ACCA2E6009BA975 /* Launcher.swift */; };
+		1B1E7FDB2ACCA2E6009BA975 /* Csshx.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1E7FDA2ACCA2E6009BA975 /* Csshx.swift */; };
 		1B1E7FDE2ACCA391009BA975 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 1B1E7FDD2ACCA391009BA975 /* ArgumentParser */; };
 		1B22989B2AD8818500DB0C31 /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B22989A2AD8818500DB0C31 /* Socket.swift */; };
 		1B4245822AD4952700137DD8 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4245812AD4952700137DD8 /* Settings.swift */; };
@@ -40,13 +40,13 @@
 /* Begin PBXFileReference section */
 		1B021A682AD9510E00255894 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		1B1840C12AD59A9900A6335B /* Signal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Signal.swift; sourceTree = "<group>"; };
-		1B1840C42AD59AE300A6335B /* CsshX.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CsshX.swift; sourceTree = "<group>"; };
+		1B1840C42AD59AE300A6335B /* Launcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Launcher.swift; sourceTree = "<group>"; };
 		1B1840C62AD59BD500A6335B /* csshx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "csshx-Bridging-Header.h"; sourceTree = "<group>"; };
 		1B1840CB2AD59C3E00A6335B /* Terminal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Terminal.h; sourceTree = "<group>"; };
 		1B1840CC2AD59CBB00A6335B /* Terminal.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Terminal.m; sourceTree = "<group>"; };
 		1B1840CF2AD59DB000A6335B /* ScriptingBridge.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScriptingBridge.framework; path = System/Library/Frameworks/ScriptingBridge.framework; sourceTree = SDKROOT; };
 		1B1E7FD02ACCA2D1009BA975 /* csshx */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = csshx; sourceTree = BUILT_PRODUCTS_DIR; };
-		1B1E7FDA2ACCA2E6009BA975 /* Launcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Launcher.swift; sourceTree = "<group>"; };
+		1B1E7FDA2ACCA2E6009BA975 /* Csshx.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Csshx.swift; sourceTree = "<group>"; };
 		1B1E7FDF2ACCA607009BA975 /* csshX */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = csshX; sourceTree = "<group>"; };
 		1B22989A2AD8818500DB0C31 /* Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Socket.swift; sourceTree = "<group>"; };
 		1B4245812AD4952700137DD8 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
@@ -92,7 +92,9 @@
 		1B1840C32AD59AD800A6335B /* cmd */ = {
 			isa = PBXGroup;
 			children = (
-				1B1840C42AD59AE300A6335B /* CsshX.swift */,
+				1B71D8B62AD764D0005CC0FE /* Host.swift */,
+				1B1840C42AD59AE300A6335B /* Launcher.swift */,
+				1B9CB9C82AD724D70053DF33 /* Controller.swift */,
 			);
 			path = cmd;
 			sourceTree = "<group>";
@@ -131,7 +133,7 @@
 				1B8E5DBA2AD5A2FC00263910 /* controller */,
 				1B1840C32AD59AD800A6335B /* cmd */,
 				1B1840C02AD59A7F00A6335B /* utils */,
-				1B1E7FDA2ACCA2E6009BA975 /* Launcher.swift */,
+				1B1E7FDA2ACCA2E6009BA975 /* Csshx.swift */,
 				1BA8237A2AD0A032006913CF /* Config.swift */,
 				1B4245812AD4952700137DD8 /* Settings.swift */,
 				1B8E5DC22AD6018300263910 /* CGSPrivate.h */,
@@ -147,8 +149,6 @@
 		1B8E5DBA2AD5A2FC00263910 /* controller */ = {
 			isa = PBXGroup;
 			children = (
-				1B9CB9C82AD724D70053DF33 /* Controller.swift */,
-				1B71D8B62AD764D0005CC0FE /* Host.swift */,
 			);
 			path = controller;
 			sourceTree = "<group>";
@@ -218,12 +218,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1B1E7FDB2ACCA2E6009BA975 /* Launcher.swift in Sources */,
+				1B1E7FDB2ACCA2E6009BA975 /* Csshx.swift in Sources */,
 				1B8E5DC02AD5EAAF00263910 /* Window.swift in Sources */,
 				1B5F44012AD8A076003045E6 /* Bridge.m in Sources */,
 				1B9CB9C92AD724D70053DF33 /* Controller.swift in Sources */,
 				1B71D8B72AD764D0005CC0FE /* Host.swift in Sources */,
-				1B1840C52AD59AE300A6335B /* CsshX.swift in Sources */,
+				1B1840C52AD59AE300A6335B /* Launcher.swift in Sources */,
 				1B71D8B92AD76535005CC0FE /* Misc.swift in Sources */,
 				1B1840C22AD59A9900A6335B /* Signal.swift in Sources */,
 				1BA8237B2AD0A032006913CF /* Config.swift in Sources */,
