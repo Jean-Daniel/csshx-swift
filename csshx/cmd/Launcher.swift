@@ -26,14 +26,24 @@ extension Csshx {
   *user@*. Similarly, appending *:port* will set the port to ssh to.
 
   You can also use hostname ranges, to specify many hosts.
-""")
+""",
+    version: "1.0.0")
 
     //    @OptionGroup
     //    var config: Config
 
+    @OptionGroup
+    var options: Config
+
     //    @Option(parsing: .singleValue, help: "The host or cluster to connect.")
     //    var hosts: [String] = []
 
+    @OptionGroup(title:"SSH Options")
+    var sshOptions: SSHOptions
+
+    @OptionGroup(title:"Layout Options")
+    var layoutOptions: LayoutOptions
+    
     @Argument(help: "The hosts to connect.")
     var hosts: [String] = []
 
@@ -60,10 +70,6 @@ extension Csshx {
       if settings.space >= 0 {
         controller.space = settings.space
       }
-
-      // if let set = settings.controllerSettingsSet {
-      // controller.setSettingsSet(set)
-      // }
 
       // Wait for master to be ready
       do {
@@ -137,11 +143,12 @@ extension Csshx {
 
     private func openController(settings cfg: Settings) throws -> Terminal.Tab {
       let csshx = URL(filePath: CommandLine.arguments[0]).standardizedFileURL
-      let args: [String] = [
-        csshx.path, "--", "controller",
-        "--launchpid", "\(getpid())",
-        "--socket", "\(cfg.socket)",
-      ]
+      let args = [ "echo", "hello", "world" ]
+//      let args: [String] = [
+//        csshx.path, "--", "controller",
+//        "--launchpid", "\(getpid())",
+//        "--socket", "\(cfg.socket)",
+//      ]
 
       //    if let socket = cfg.socket {
       //      args.append("--sock")
@@ -157,6 +164,14 @@ extension Csshx {
       //    }
 
       let tab = try Terminal.Tab.open()
+
+      // Set profile first.
+      if let profile = cfg.controllerProfile {
+        if (!tab.setProfile(profile)) {
+          // TODO: print warning ?
+        }
+      }
+
       try tab.run(args: args)
       return tab
     }

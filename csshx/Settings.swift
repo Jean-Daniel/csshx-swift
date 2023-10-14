@@ -170,8 +170,8 @@ struct Settings {
   var columns: Int = 0
 
   var sshArgs: String? = nil
-//  remote_command
-//  launchpid
+  var remoteCommand: String? = nil
+
   var login: String?
   var screen: Int = 0
   var space: Int32 = -1
@@ -180,15 +180,14 @@ struct Settings {
 
   var pingTest: String? = nil
   var pingTimeout: Int = 2
-//  slavehost
-//  slaveid
+
   var socket: String = ""
 
   var ssh: String = "ssh"
   var interleave: Int = 0
 
-  var controllerSettingsSet: String? = nil
-  var hostSettingsSet: String? = nil
+  var controllerProfile: String? = nil
+  var hostProfile: String? = nil
 
   var sorthosts: Bool = false
 
@@ -200,49 +199,53 @@ struct Settings {
 
 extension Settings {
   static let arguments : [String: Arg] = [
+    // Common settings
+    "debug": Arg(\Settings.debug),
+
+    // Launcher settings
+    "master_settings_set": Arg(\Settings.controllerProfile),
+    "color_master_foreground": Arg(\Settings.controllerForeground),
+    "color_master_background": Arg(\Settings.controllerBackground),
+
+    // Controller specific settings
     "action_key": Arg(\Settings.actionKey),
 
+    "slave_settings_set": Arg(\Settings.hostProfile),
+    
     "color_selected_foreground": Arg(\Settings.selectedForeground),
     "color_selected_background": Arg(\Settings.selectedBackground),
 
     "color_disabled_foreground": Arg(\Settings.disabledForeground),
     "color_disabled_background": Arg(\Settings.disabledBackground),
 
-    "color_master_foreground": Arg(\Settings.controllerForeground),
-    "color_master_background": Arg(\Settings.controllerBackground),
-
     "color_setbounds_foreground": Arg(\Settings.setboundsForeground),
     "color_setbounds_background": Arg(\Settings.setboundsBackground),
 
-    "tile_x": Arg(\Settings.columns),
-    "tile_y": Arg(\Settings.rows),
-
-    "ssh_args": Arg(\Settings.sshArgs),
-
-//    "remote_command": \Settings.,
-//    "launchpid": \Settings.,
-    "login": Arg(\Settings.login),
-
-    "master_height": Arg(\Settings.controllerHeight),
-    "screen_bounds": Arg(\Settings.screenBounds),
-    "screen": Arg(\Settings.screen),
-    "space": Arg(\Settings.space),
-    "debug": Arg(\Settings.debug),
-
-//    "slavehost": \Settings.setboundsForeground,
-//    "slaveid": \Settings.setboundsForeground,
     "sock": Arg(\Settings.socket),
+
+    // SSH Session
+    "ssh": Arg(\Settings.ssh),
+    "login": Arg(\Settings.login),
+    "ssh_args": Arg(\Settings.sshArgs),
+    "remote_command": Arg(\Settings.remoteCommand),
 
     "session_max": Arg(\Settings.sessionMax),
     "ping_test": Arg(\Settings.pingTest),
     "ping_timeout": Arg(\Settings.pingTimeout),
-    "ssh": Arg(\Settings.ssh),
-    "interleave": Arg(\Settings.interleave),
-    
-    "master_settings_set": Arg(\Settings.controllerSettingsSet),
-    "slave_settings_set": Arg(\Settings.hostSettingsSet),
 
+    // Hosts loading
     "sorthosts": Arg(\Settings.sorthosts),
+    "interleave": Arg(\Settings.interleave),
+
+    // Screen Layout
+    "tile_x": Arg(\Settings.columns),
+    "tile_y": Arg(\Settings.rows),
+
+    "screen_bounds": Arg(\Settings.screenBounds),
+    "master_height": Arg(\Settings.controllerHeight),
+
+    "screen": Arg(\Settings.screen),
+    "space": Arg(\Settings.space),
   ]
 }
 

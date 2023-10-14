@@ -98,6 +98,16 @@ extension Terminal {
       }
     }
 
+    func setProfile(_ profile: String) -> Bool {
+      guard let settings = terminal.settingsSets().object(withName: profile) as? TerminalSettingsSet else {
+        // should never fails as it only create an ObjectDescriptor
+        logger.warning("failed to create settings set \(profile)")
+        return false
+      }
+      tab.currentSettings = settings
+      return tab.currentSettings.name == profile
+    }
+
     // var uid: String { "\(window.id),\(id)" }
 
     /*
