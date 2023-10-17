@@ -8,33 +8,26 @@
 import Foundation
 import RegexBuilder
 
-private let anythingButAt: CharacterClass = .anyOf("@").inverted
-private let anythingButColon: CharacterClass = .anyOf(":").inverted
-
 private let hostFormat = Regex {
   Optionally {
     Regex {
-      Capture {
-        OneOrMore(anythingButAt)
-      }
+      Capture(OneOrMore(.any, .reluctant))
       "@"
     }
   }
-  Capture {
-    OneOrMore(anythingButColon)
-  }
+  Capture(OneOrMore(.any, .reluctant))
   Optionally {
     Regex {
       ":"
       Capture {
-        OneOrMore(.digit)
-      } transform: { UInt16($0)! }
+        OneOrMore(.any)
+      }
     }
   }
 }
 
-extension String {
-  func parseUserHostPort() throws -> (String?, String, UInt16?) {
+extension StringProtocol where Self.SubSequence == Substring {
+  func parseUserHostPort() throws -> (String?, String, String?) {
     // Formats:
     //   hostname
     //   hostname:port
@@ -43,7 +36,7 @@ extension String {
     guard let result = wholeMatch(of: hostFormat) else {
       throw CocoaError(.formatting)
     }
-    return (result.output.1.flatMap(String.init), String(result.output.2), result.output.3);
+    return (result.output.1.flatMap(String.init), String(result.output.2), result.output.3.flatMap(String.init));
   }
 }
 

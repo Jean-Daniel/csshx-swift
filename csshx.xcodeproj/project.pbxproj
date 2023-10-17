@@ -18,10 +18,16 @@
 		1B5F44012AD8A076003045E6 /* Bridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B5F44002AD8A076003045E6 /* Bridge.m */; };
 		1B71D8B72AD764D0005CC0FE /* Host.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B71D8B62AD764D0005CC0FE /* Host.swift */; };
 		1B71D8B92AD76535005CC0FE /* Misc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B71D8B82AD76535005CC0FE /* Misc.swift */; };
+		1B8A64A42ADB31440008DA98 /* ConfigReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8A64A32ADB31440008DA98 /* ConfigReader.swift */; };
 		1B8E5DBE2AD5BE4700263910 /* Terminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8E5DBD2AD5BE4700263910 /* Terminal.swift */; };
 		1B8E5DC02AD5EAAF00263910 /* Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8E5DBF2AD5EAAF00263910 /* Window.swift */; };
 		1B9CB9C92AD724D70053DF33 /* Controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9CB9C82AD724D70053DF33 /* Controller.swift */; };
+		1BA21F842ADDA3FA00F85A1E /* csshx_tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA21F832ADDA3FA00F85A1E /* csshx_tests.swift */; };
+		1BA21F892ADDA44A00F85A1E /* Misc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B71D8B82AD76535005CC0FE /* Misc.swift */; };
 		1BA8237B2AD0A032006913CF /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA8237A2AD0A032006913CF /* Config.swift */; };
+		1BC523392ADDAEC200FF4FEC /* HostList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BC523382ADDAEC200FF4FEC /* HostList.swift */; };
+		1BC5233A2ADDAEE700FF4FEC /* HostList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BC523382ADDAEC200FF4FEC /* HostList.swift */; };
+		1BC5233E2ADDAF1300FF4FEC /* HostListTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BC5233D2ADDAF1300FF4FEC /* HostListTests.swift */; };
 		1BD4EB692AD1403B00084A59 /* Timeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD4EB682AD1403B00084A59 /* Timeout.swift */; };
 /* End PBXBuildFile section */
 
@@ -54,12 +60,18 @@
 		1B5F44022AD8A3D5003045E6 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Bridge.h; sourceTree = "<group>"; };
 		1B71D8B62AD764D0005CC0FE /* Host.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Host.swift; sourceTree = "<group>"; };
 		1B71D8B82AD76535005CC0FE /* Misc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Misc.swift; sourceTree = "<group>"; };
+		1B8A64A32ADB31440008DA98 /* ConfigReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigReader.swift; sourceTree = "<group>"; };
 		1B8E5DBD2AD5BE4700263910 /* Terminal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Terminal.swift; sourceTree = "<group>"; };
 		1B8E5DBF2AD5EAAF00263910 /* Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Window.swift; sourceTree = "<group>"; };
 		1B8E5DC12AD5F4FA00263910 /* csshx.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = csshx.entitlements; sourceTree = "<group>"; };
 		1B8E5DC22AD6018300263910 /* CGSPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CGSPrivate.h; sourceTree = "<group>"; };
 		1B9CB9C82AD724D70053DF33 /* Controller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controller.swift; sourceTree = "<group>"; };
+		1BA21F812ADDA3FA00F85A1E /* csshx-tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "csshx-tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1BA21F832ADDA3FA00F85A1E /* csshx_tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = csshx_tests.swift; sourceTree = "<group>"; };
+		1BA21F8A2ADDA4D400F85A1E /* csshx.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = csshx.xctestplan; sourceTree = "<group>"; };
 		1BA8237A2AD0A032006913CF /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		1BC523382ADDAEC200FF4FEC /* HostList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostList.swift; sourceTree = "<group>"; };
+		1BC5233D2ADDAF1300FF4FEC /* HostListTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostListTests.swift; sourceTree = "<group>"; };
 		1BD4EB682AD1403B00084A59 /* Timeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Timeout.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -70,6 +82,13 @@
 			files = (
 				1B1840D02AD59DB000A6335B /* ScriptingBridge.framework in Frameworks */,
 				1B1E7FDE2ACCA391009BA975 /* ArgumentParser in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1BA21F7E2ADDA3FA00F85A1E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,6 +104,7 @@
 				1B8E5DBF2AD5EAAF00263910 /* Window.swift */,
 				1B71D8B82AD76535005CC0FE /* Misc.swift */,
 				1B22989A2AD8818500DB0C31 /* Socket.swift */,
+				1BC523382ADDAEC200FF4FEC /* HostList.swift */,
 			);
 			path = utils;
 			sourceTree = "<group>";
@@ -110,8 +130,10 @@
 		1B1E7FC72ACCA2D1009BA975 = {
 			isa = PBXGroup;
 			children = (
+				1BA21F8A2ADDA4D400F85A1E /* csshx.xctestplan */,
 				1B021A682AD9510E00255894 /* README.md */,
 				1B1E7FD22ACCA2D1009BA975 /* csshx */,
+				1BA21F822ADDA3FA00F85A1E /* csshx-tests */,
 				1B1E7FD12ACCA2D1009BA975 /* Products */,
 				1B1840CE2AD59DB000A6335B /* Frameworks */,
 			);
@@ -121,6 +143,7 @@
 			isa = PBXGroup;
 			children = (
 				1B1E7FD02ACCA2D1009BA975 /* csshx */,
+				1BA21F812ADDA3FA00F85A1E /* csshx-tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -136,6 +159,7 @@
 				1B1E7FDA2ACCA2E6009BA975 /* Csshx.swift */,
 				1BA8237A2AD0A032006913CF /* Config.swift */,
 				1B4245812AD4952700137DD8 /* Settings.swift */,
+				1B8A64A32ADB31440008DA98 /* ConfigReader.swift */,
 				1B8E5DC22AD6018300263910 /* CGSPrivate.h */,
 				1B1840CB2AD59C3E00A6335B /* Terminal.h */,
 				1B5F44022AD8A3D5003045E6 /* Bridge.h */,
@@ -151,6 +175,15 @@
 			children = (
 			);
 			path = controller;
+			sourceTree = "<group>";
+		};
+		1BA21F822ADDA3FA00F85A1E /* csshx-tests */ = {
+			isa = PBXGroup;
+			children = (
+				1BA21F832ADDA3FA00F85A1E /* csshx_tests.swift */,
+				1BC5233D2ADDAF1300FF4FEC /* HostListTests.swift */,
+			);
+			path = "csshx-tests";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -176,6 +209,23 @@
 			productReference = 1B1E7FD02ACCA2D1009BA975 /* csshx */;
 			productType = "com.apple.product-type.tool";
 		};
+		1BA21F802ADDA3FA00F85A1E /* csshx-tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1BA21F872ADDA3FA00F85A1E /* Build configuration list for PBXNativeTarget "csshx-tests" */;
+			buildPhases = (
+				1BA21F7D2ADDA3FA00F85A1E /* Sources */,
+				1BA21F7E2ADDA3FA00F85A1E /* Frameworks */,
+				1BA21F7F2ADDA3FA00F85A1E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "csshx-tests";
+			productName = "csshx-tests";
+			productReference = 1BA21F812ADDA3FA00F85A1E /* csshx-tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -189,6 +239,9 @@
 					1B1E7FCF2ACCA2D1009BA975 = {
 						CreatedOnToolsVersion = 15.0;
 						LastSwiftMigration = 1500;
+					};
+					1BA21F802ADDA3FA00F85A1E = {
+						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
@@ -209,9 +262,20 @@
 			projectRoot = "";
 			targets = (
 				1B1E7FCF2ACCA2D1009BA975 /* csshx */,
+				1BA21F802ADDA3FA00F85A1E /* csshx-tests */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1BA21F7F2ADDA3FA00F85A1E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1B1E7FCC2ACCA2D1009BA975 /* Sources */ = {
@@ -221,6 +285,7 @@
 				1B1E7FDB2ACCA2E6009BA975 /* Csshx.swift in Sources */,
 				1B8E5DC02AD5EAAF00263910 /* Window.swift in Sources */,
 				1B5F44012AD8A076003045E6 /* Bridge.m in Sources */,
+				1BC523392ADDAEC200FF4FEC /* HostList.swift in Sources */,
 				1B9CB9C92AD724D70053DF33 /* Controller.swift in Sources */,
 				1B71D8B72AD764D0005CC0FE /* Host.swift in Sources */,
 				1B1840C52AD59AE300A6335B /* Launcher.swift in Sources */,
@@ -231,7 +296,19 @@
 				1B4245822AD4952700137DD8 /* Settings.swift in Sources */,
 				1B8E5DBE2AD5BE4700263910 /* Terminal.swift in Sources */,
 				1B1840CD2AD59CBB00A6335B /* Terminal.m in Sources */,
+				1B8A64A42ADB31440008DA98 /* ConfigReader.swift in Sources */,
 				1BD4EB692AD1403B00084A59 /* Timeout.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1BA21F7D2ADDA3FA00F85A1E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1BA21F842ADDA3FA00F85A1E /* csshx_tests.swift in Sources */,
+				1BC5233A2ADDAEE700FF4FEC /* HostList.swift in Sources */,
+				1BA21F892ADDA44A00F85A1E /* Misc.swift in Sources */,
+				1BC5233E2ADDAF1300FF4FEC /* HostListTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,6 +466,36 @@
 			};
 			name = Release;
 		};
+		1BA21F852ADDA3FA00F85A1E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3DT6DNJE39;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.xenonium.csshx-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1BA21F862ADDA3FA00F85A1E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3DT6DNJE39;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.xenonium.csshx-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -406,6 +513,15 @@
 			buildConfigurations = (
 				1B1E7FD82ACCA2D1009BA975 /* Debug */,
 				1B1E7FD92ACCA2D1009BA975 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1BA21F872ADDA3FA00F85A1E /* Build configuration list for PBXNativeTarget "csshx-tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1BA21F852ADDA3FA00F85A1E /* Debug */,
+				1BA21F862ADDA3FA00F85A1E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

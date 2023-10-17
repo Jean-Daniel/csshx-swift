@@ -1,0 +1,34 @@
+{
+  "configurations" : [
+    {
+      "id" : "6F3A43B0-F46E-4C58-A57B-0C8EBF063083",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "--controller-profile Grassouille"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:csshx.xcodeproj",
+      "identifier" : "1B1E7FCF2ACCA2D1009BA975",
+      "name" : "csshx"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:csshx.xcodeproj",
+        "identifier" : "1BA21F802ADDA3FA00F85A1E",
+        "name" : "csshx-tests"
+      }
+    }
+  ],
+  "version" : 1
+}

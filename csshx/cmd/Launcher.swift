@@ -15,28 +15,22 @@ extension Csshx {
       commandName: "csshx",
       abstract: "csshX - Cluster SSH tool using Mac OS X Terminal.app",
       discussion: """
-  csshX is a tool to allow simultaneous control of multiple ssh sessions.
-  *host1*, *host2*, etc. are either remote hostnames or remote cluster
-  names. csshX will attempt to create an ssh session to each remote host
-  in separate Terminal.app windows. A *master* window will also be
-  created. All keyboard input in the master will be sent to all the
-  *slave* windows.
+                 csshX is a tool to allow simultaneous control of multiple ssh sessions.
+                 *host1*, *host2*, etc. are either remote hostnames or remote cluster
+                 names. csshX will attempt to create an ssh session to each remote host
+                 in separate Terminal.app windows. A *master* window will also be
+                 created. All keyboard input in the master will be sent to all the
+                 *slave* windows.
 
-  To specify the username for each host, the hostname can be prepended by
-  *user@*. Similarly, appending *:port* will set the port to ssh to.
+                 To specify the username for each host, the hostname can be prepended by
+                 *user@*. Similarly, appending *:port* will set the port to ssh to.
 
-  You can also use hostname ranges, to specify many hosts.
-""",
+                 You can also use hostname ranges, to specify many hosts.
+                 """,
     version: "1.0.0")
 
-    //    @OptionGroup
-    //    var config: Config
-
-    @OptionGroup
+    @OptionGroup(title:"Options")
     var options: Config
-
-    //    @Option(parsing: .singleValue, help: "The host or cluster to connect.")
-    //    var hosts: [String] = []
 
     @OptionGroup(title:"SSH Options")
     var sshOptions: SSHOptions
@@ -50,21 +44,19 @@ extension Csshx {
     mutating func run() async throws {
       logger.info("start launcher")
 
-      var settings = Settings()
+      let (settings, hostList) = try await Settings.load(hosts, options: options, sshOptions: sshOptions, layoutOptions: layoutOptions)
 
-      // load_clusters(URL(filePath: "/etc/clusters"))
-
-      // $obj->load_csshrc($_) foreach ("/etc/csshrc", "$ENV{HOME}/.csshrc");
-
-      // Load extra hosts and configurations
-      // $obj->load_hosts($_)  foreach @{$obj->{hosts}};
-      // $obj->load_csshrc($_) foreach @{$obj->{config}};
+      // TODO: resolve all hosts
+      
+      // TODO: ping test support.
+      // ICMP mode: Use SimplePing class to check reachability per host.
+      // TCP mode: Use Network Framework to perform a TCP connect/close per host/port.
 
 
-      // Create unique socket file path.
-      if settings.socket.isEmpty {
-        settings.socket = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
-      }
+
+//      if settings.socket.isEmpty {
+//        settings.socket = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
+//      }
 
       let controller = try openController(settings: settings)
       if settings.space >= 0 {
@@ -166,7 +158,7 @@ extension Csshx {
       let tab = try Terminal.Tab.open()
 
       // Set profile first.
-      if let profile = cfg.controllerProfile {
+      if let profile = cfg.controllerWindowProfile {
         if (!tab.setProfile(profile)) {
           // TODO: print warning ?
         }
@@ -176,79 +168,38 @@ extension Csshx {
       return tab
     }
 
-    private func openTab(host: String, id hostId: Int, settings cfg: Settings) throws -> Terminal.Tab {
-      let csshx = URL(filePath: CommandLine.arguments[0]).standardizedFileURL
-
-      let args: [String] = [
-        csshx.path, "--", "host",
-        "--socket", "\(cfg.socket)",
-        "--slaveid", "\(hostId)",
-        "--slavehost", "\(host)",
-      ]
-//        $script, '--slave', '--sock', $sock, '--slavehost', $slavehost,
-//        '--debug', $config->debug, '--ssh', $config->ssh,
-//        '--ssh_args', $config->ssh_args, '--remote_command', $rem_command,
-//        '--slaveid', $slave_id, $login  ? ( '--login',    $login  ) :(),
-//        (map { ('--config', $_) } @config),
-//      ) or next;
-
-      //    if let socket = cfg.socket {
-      //      args.append("--sock")
-      //      args.append(socket)
-      //    }
-      //    if let login = cfg.login {
-      //      args.append("--login")
-      //      args.append(login)
-      //    }
-      //    for c in cfg.configs {
-      //      args.append("--config")
-      //      args.append(c.absoluteURL.path)
-      //    }
-
-      let tab = try Terminal.Tab.open()
-      try tab.run(args: args)
-      return tab
-    }
+//    private func openTab(host: String, id hostId: Int, settings cfg: Settings) throws -> Terminal.Tab {
+//      let csshx = URL(filePath: CommandLine.arguments[0]).standardizedFileURL
+//
+//      let args: [String] = [
+//        csshx.path, "--", "host",
+//        "--socket", "\(cfg.socket)",
+//        "--slaveid", "\(hostId)",
+//        "--slavehost", "\(host)",
+//      ]
+////        $script, '--slave', '--sock', $sock, '--slavehost', $slavehost,
+////        '--debug', $config->debug, '--ssh', $config->ssh,
+////        '--ssh_args', $config->ssh_args, '--remote_command', $rem_command,
+////        '--slaveid', $slave_id, $login  ? ( '--login',    $login  ) :(),
+////        (map { ('--config', $_) } @config),
+////      ) or next;
+//
+//      //    if let socket = cfg.socket {
+//      //      args.append("--sock")
+//      //      args.append(socket)
+//      //    }
+//      //    if let login = cfg.login {
+//      //      args.append("--login")
+//      //      args.append(login)
+//      //    }
+//      //    for c in cfg.configs {
+//      //      args.append("--config")
+//      //      args.append(c.absoluteURL.path)
+//      //    }
+//
+//      let tab = try Terminal.Tab.open()
+//      try tab.run(args: args)
+//      return tab
+//    }
   }
 }
-
-//mutating func load_csshrc(at path: String) async throws {
-//  let file = URL(filePath: path)
-//  var clusters = [String]()
-//  var settings = [String:String]()
-//
-//  let comment = /#.*$/
-//  for try await line in file.lines {
-//    guard let match = line.replacing(comment, with: "").wholeMatch(of: /^\s*(\S+)\s*=\s*(.*?)\s*$/) else {
-//      logger.warning("invalid csshrc line: \(line)")
-//      continue
-//    }
-//    let key = match.output.1
-//    let value = match.output.2
-//    if (key == "extra_cluster_file") {
-//      for extra in value.split(separator: /\s*,\s*/) {
-//        try await load_csshrc(at: String(extra))
-//      }
-//    } else if (key == "clusters") {
-//      clusters.append(contentsOf: value.split(separator: /\s+/).map { String($0) })
-//    } else {
-//      settings[String(key)] = String(value)
-//    }
-//  }
-//
-//  for cluster in clusters {
-//    guard let hosts = settings[cluster]?.split(separator: /\s+/), !hosts.isEmpty else {
-//      logger.warning("No hosts defined for cluster \(cluster) in \(path)")
-//      continue
-//    }
-//    if (self.clusters[cluster]?.append(contentsOf: hosts.map { String($0) }) == nil) {
-//      self.clusters[cluster] = hosts.map { String($0) }
-//    }
-//  }
-//
-//  // TODO: update configuration
-//  // foreach my $key (@config_keys) {
-//  //   $obj->{$key} = $settings{$key} if exists $settings{$key};
-//  // }
-//}
-//

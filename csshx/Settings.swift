@@ -59,20 +59,28 @@ enum SettingsError: Error {
   case invalidValue
 }
 
-struct Arg {
-  init<Ty>(_ keypath: WritableKeyPath<Settings, Ty>) where Ty: ExpressibleByStringArgument{
-    self.setter = {
-      $0[keyPath: keypath] = try parse($1)
-    }
+struct Op {
+
+  private let op: (inout Settings, String) throws -> Void
+
+  @inlinable
+  func callAsFunction(settings: inout Settings, value: String) throws {
+    try op(&settings, value)
   }
 
-  init<Ty>(_ keypath: WritableKeyPath<Settings, Ty?>) where Ty: ExpressibleByStringArgument{
-    self.setter = {
-      $0[keyPath: keypath] = try parse($1)
-    }
+  static func set<Ty>(_ keypath: WritableKeyPath<Settings, Ty>) -> Op where Ty: ExpressibleByStringArgument {
+    return Op { $0[keyPath: keypath] = try parse($1) }
   }
 
-  fileprivate let setter: (inout Settings, String) throws -> Void
+  static func set<Ty>(_ keypath: WritableKeyPath<Settings, Ty?>) -> Op where Ty: ExpressibleByStringArgument {
+    return Op { $0[keyPath: keypath] = try parse($1) }
+  }
+
+  static func append<Ty>(_ keypath: WritableKeyPath<Settings, [Ty]>) -> Op where Ty: ExpressibleByStringArgument {
+    return Op {
+      $0[keyPath: keypath].append(try parse($1))
+    }
+  }
 }
 
 private func parse<Ty>(_ value: String) throws -> Ty where Ty: ExpressibleByStringArgument {
@@ -160,8 +168,8 @@ struct Settings {
   var controllerForeground: Color? = Color(red: 65535, green: 65535, blue: 65535)
   var controllerBackground: Color? = Color(red: 38036, green: 0, blue: 0)
 
-  var setboundsForeground: Color?
-  var setboundsBackground: Color? = Color(red: 17990, green: 35209, blue: 53456)
+  var resizingForeground: Color?
+  var resizingBackground: Color? = Color(red: 17990, green: 35209, blue: 53456)
 
   var controllerHeight: Int = 87 // Pixels ?
   var screenBounds: CGRect? = nil
@@ -175,10 +183,10 @@ struct Settings {
   var login: String?
   var screen: Int = 0
   var space: Int32 = -1
-  var debug: Int = 0
+  var debug: Bool = false
   var sessionMax = 256
 
-  var pingTest: String? = nil
+  var pingTest: Bool = false
   var pingTimeout: Int = 2
 
   var socket: String = ""
@@ -186,66 +194,78 @@ struct Settings {
   var ssh: String = "ssh"
   var interleave: Int = 0
 
-  var controllerProfile: String? = nil
-  var hostProfile: String? = nil
+  var controllerWindowProfile: String? = nil
+  var hostWindowProfile: String? = nil
 
-  var sorthosts: Bool = false
+  var sortHosts: Bool = false
 
-  fileprivate mutating func set(_ arg: Arg, value: String) throws {
-    try arg.setter(&self, value)
+  mutating func set(_ arg: String, value: String) throws {
+    guard let op = Self.arguments[arg] else {
+      throw POSIXError(.EINVAL)
+    }
+    try op(settings: &self, value: value)
   }
 }
 
 
 extension Settings {
-  static let arguments : [String: Arg] = [
+  static let arguments : [String: Op] = [
     // Common settings
-    "debug": Arg(\Settings.debug),
+    "debug": .set(\Settings.debug),
 
     // Launcher settings
-    "master_settings_set": Arg(\Settings.controllerProfile),
-    "color_master_foreground": Arg(\Settings.controllerForeground),
-    "color_master_background": Arg(\Settings.controllerBackground),
+    "master_settings_set": .set(\Settings.controllerWindowProfile),
+    "controller_window_profile": .set(\Settings.controllerWindowProfile),
 
     // Controller specific settings
-    "action_key": Arg(\Settings.actionKey),
+    "action_key": .set(\Settings.actionKey),
 
-    "slave_settings_set": Arg(\Settings.hostProfile),
-    
-    "color_selected_foreground": Arg(\Settings.selectedForeground),
-    "color_selected_background": Arg(\Settings.selectedBackground),
+    "slave_settings_set": .set(\Settings.hostWindowProfile),
+    "host_window_profile": .set(\Settings.hostWindowProfile),
 
-    "color_disabled_foreground": Arg(\Settings.disabledForeground),
-    "color_disabled_background": Arg(\Settings.disabledBackground),
+    "color_master_foreground": .set(\Settings.controllerForeground),
+    "color_controller_foreground": .set(\Settings.controllerForeground),
+    "color_master_background": .set(\Settings.controllerBackground),
+    "color_controller_background": .set(\Settings.controllerBackground),
 
-    "color_setbounds_foreground": Arg(\Settings.setboundsForeground),
-    "color_setbounds_background": Arg(\Settings.setboundsBackground),
+    "color_setbounds_foreground": .set(\Settings.resizingForeground),
+    "color_setbounds_background": .set(\Settings.resizingBackground),
 
-    "sock": Arg(\Settings.socket),
+    "color_selected_foreground": .set(\Settings.selectedForeground),
+    "color_selected_background": .set(\Settings.selectedBackground),
+
+    "color_disabled_foreground": .set(\Settings.disabledForeground),
+    "color_disabled_background": .set(\Settings.disabledBackground),
+
+    "sock": .set(\Settings.socket),
+    "socket": .set(\Settings.socket),
 
     // SSH Session
-    "ssh": Arg(\Settings.ssh),
-    "login": Arg(\Settings.login),
-    "ssh_args": Arg(\Settings.sshArgs),
-    "remote_command": Arg(\Settings.remoteCommand),
+    "ssh": .set(\Settings.ssh),
+    "login": .set(\Settings.login),
+    "ssh_args": .set(\Settings.sshArgs),
+    "remote_command": .set(\Settings.remoteCommand),
 
-    "session_max": Arg(\Settings.sessionMax),
-    "ping_test": Arg(\Settings.pingTest),
-    "ping_timeout": Arg(\Settings.pingTimeout),
+    "session_max": .set(\Settings.sessionMax),
+    "ping_test": .set(\Settings.pingTest),
+    "ping_timeout": .set(\Settings.pingTimeout),
 
     // Hosts loading
-    "sorthosts": Arg(\Settings.sorthosts),
-    "interleave": Arg(\Settings.interleave),
+    "sorthosts": .set(\Settings.sortHosts),
+    "interleave": .set(\Settings.interleave),
 
     // Screen Layout
-    "tile_x": Arg(\Settings.columns),
-    "tile_y": Arg(\Settings.rows),
+    "tile_x": .set(\Settings.columns),
+    "columns": .set(\Settings.columns),
+    "tile_y": .set(\Settings.rows),
+    "rows": .set(\Settings.rows),
 
-    "screen_bounds": Arg(\Settings.screenBounds),
-    "master_height": Arg(\Settings.controllerHeight),
+    "screen_bounds": .set(\Settings.screenBounds),
+    "screen": .set(\Settings.screen),
+    "space": .set(\Settings.space),
 
-    "screen": Arg(\Settings.screen),
-    "space": Arg(\Settings.space),
+    "master_height": .set(\Settings.controllerHeight),
+    "controller_height": .set(\Settings.controllerHeight),
   ]
 }
 
