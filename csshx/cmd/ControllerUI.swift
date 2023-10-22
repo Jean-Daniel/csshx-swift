@@ -15,15 +15,15 @@ class HostWindow: Equatable {
 
   let tab: Terminal.Tab
   let host: Target
-  let tty: String
+  let tty: dev_t
 
   // Terminal Tab + Socket Connection
   var whenDone: ((Error?) -> Void)? = nil
   var connection: DispatchIO? = nil
 
-  var disabled: Bool = false
+  var enabled: Bool = true
 
-  init(tab: Terminal.Tab, host: Target, tty: String) {
+  init(tab: Terminal.Tab, host: Target, tty: dev_t) {
     self.tab = tab
     self.host = host
     self.tty = tty
@@ -32,7 +32,7 @@ class HostWindow: Equatable {
   func terminate() {
     connection?.close(flags: .stop)
     connection = nil
-    disabled = true
+    enabled = false
   }
 
   static func == (lhs: HostWindow, rhs: HostWindow) -> Bool {
@@ -81,7 +81,7 @@ class Controller {
     let data = bytes.withUnsafeBytes(DispatchData.init(bytes:))
     for host in hosts {
       // Skip disabled hosts, and not connected host
-      guard !host.disabled, let connection = host.connection else { continue }
+      guard host.enabled, let connection = host.connection else { continue }
 
       connection.write(data) { [self] error in
         // on error -> remove host from the host list
@@ -168,7 +168,6 @@ class Controller {
   }
 
   private func onBytesAvailable(_ bytes: DispatchData) {
-    logger.debug("on bytes availables: \(bytes.count) bytes")
     buffer.append(contentsOf: bytes)
 
     // if mode changed and buffer is not empty -> reparse
@@ -215,7 +214,8 @@ extension Controller {
         case .success(let fd):
           let pid = getPid(socket: fd)
           logger.info("did open connection from pid \(pid)")
-          guard let tty = Bridge.getProcessTTY(pid) else {
+          let tty = Bridge.getProcessTTY(pid)
+          guard tty > 0 else {
             logger.warning("cannot get connected process tty. Rejecting the connection")
             Darwin.close(fd)
             return
@@ -229,7 +229,7 @@ extension Controller {
     }
   }
 
-  private func didOpen(socket: Int32, tty: String) {
+  private func didOpen(socket: Int32, tty: dev_t) {
     logger.info("on open connection: \(tty)")
 
     // lookup matching host window and attach the connection
@@ -269,7 +269,8 @@ extension Controller {
         // TODO: print warning ?
       }
     }
-    guard let tty = tab.tty() else {
+    let tty = tab.tty()
+    guard tty > 0 else {
       throw ScriptingBridgeError()
     }
     logger.info("[\(target.hostname)] opening window: \(tab.windowId)/\(tab.tabIdx) (tty: \(tty))")
@@ -350,7 +351,7 @@ let csiCursorCode = Regex {
 }
 
 extension InputMode {
-  static let starting = InputMode { ctrl in
+  static let starting: InputMode = InputMode { ctrl in
     "Starting hosts: \(ctrl.hosts.count { $0.connection != nil } )/\(ctrl.hosts.count)…"
   } onEnable: { ctrl in
     // noop
@@ -361,7 +362,7 @@ extension InputMode {
 }
 
 extension InputMode {
-  static let input = InputMode { ctrl in
+  static let input: InputMode = InputMode { ctrl in
     "Input to terminal: (Ctrl-\(ctrl.settings.actionKey.ascii) to enter control mode)\r\n"
   } onEnable: { ctrl in
     // noop
@@ -371,7 +372,7 @@ extension InputMode {
     // Convert CSI to SS3 cursor codes
     // "".replacing(csiCursorCode, with: { "\\033O\($0.1)" })
 
-    if let escape = data.firstIndex(of: ctrl.settings.actionKey.value) {
+    if let escape = data.firstIndex(of: action.value) {
       // Send data until escape sequence.
       if (escape > 0) {
         ctrl.send(bytes: data[0..<escape])
@@ -392,108 +393,93 @@ extension InputMode {
 
 // MARK: -
 extension InputMode {
-  static let action = InputMode { ctrl in
-    ""
+  static let action: InputMode = InputMode { ctrl in
+    let enabled = ctrl.hosts.allSatisfy(\.enabled)
+    let escape = "Ctrl-\(ctrl.settings.actionKey.ascii)"
+    return "Actions (Esc to exit, \(escape) to send \(escape) to input)\r\n" +
+    "[c]reate window, [r]etile, s[o]rt, [e]nable/disable input, e[n]able all, " +
+    // ( (!ctrl.hosts.isEmpty) && (enabled) ? "[Space] Enable next " : "") +
+    "[t]oggle enabled, [m]inimise, [h]ide, [s]end text, change [b]ounds, " +
+    "chan[g]e [G]rid, e[x]it\r\n";
   } onEnable: { ctrl in
 
   } parseInput: { ctrl, data in
+    switch (data.removeFirst()) {
+      case 0x1b: // escape (\e)
+        try ctrl.setInputMode(.input)
+      case ctrl.settings.actionKey.value:
+        ctrl.send(bytes: [ctrl.settings.actionKey.value])
+        try ctrl.setInputMode(.input)
 
+/*
+ if ($buffer =~ s/^r//) {
+     $obj->master->arrange_windows;
+     return $obj->set_mode_and_parse('input', $buffer);
+ } elsif ($buffer =~ s/^o//) {
+     return $obj->set_mode_and_parse('sort', $buffer);
+ } elsif ($buffer =~ s/^c//) {
+     return $obj->set_mode_and_parse('addhost', $buffer);
+ } elsif ($buffer =~ s/^e//) {
+     foreach my $window (CsshX::Master::Socket::Slave->slaves) {
+         $window->unzoom;
+     }
+     return $obj->set_mode_and_parse('enable', $buffer);
+ } elsif ($buffer =~ s/^b//) {
+     return $obj->set_mode_and_parse('bounds', $buffer);
+ } elsif ($buffer =~ s/^s//) {
+     return $obj->set_mode_and_parse('sendstring', $buffer);
+ } elsif ($buffer =~ s/^G//) {
+     my $x = $config->tile_x - 1;
+     $x = 1 if $x < 1;
+     $config->set('tile_x', $x);
+     $obj->master->arrange_windows;
+ } elsif ($buffer =~ s/^g//) {
+     my $x = $config->tile_x + 1;
+     my $slaves = scalar CsshX::Master::Socket::Slave->slaves;
+     $x = $slaves if $x > $slaves;
+     $config->set('tile_x', $x);
+     $obj->master->arrange_windows;
+ } elsif ($buffer =~ s/^n//) {
+     foreach my $window (CsshX::Master::Socket::Slave->slaves) {
+         $window->unzoom;
+         $window->set_disabled(0);
+     }
+     return $obj->set_mode_and_parse('input', $buffer);
+ } elsif ($buffer =~ s/^t//) {
+     foreach my $window (CsshX::Master::Socket::Slave->slaves) {
+         $window->unzoom;
+         $window->set_disabled(!$window->disabled);
+     }
+     return $obj->set_mode_and_parse('input', $buffer);
+ } elsif ($buffer =~ s/^ //) {
+     my @enabled = grep {
+         (! $_->disabled) && $_
+     } CsshX::Master::Socket::Slave->slaves;
+     if (@enabled == 1) { $enabled[0]->select_next(); }
+     return $obj->set_mode_and_parse('input', $buffer);
+ } elsif ($buffer =~ s/^m//) {
+     $_->minimise foreach (CsshX::Master::Socket::Slave->slaves);
+     return $obj->set_mode_and_parse('input', $buffer);
+ } elsif ($buffer =~ s/^h//) {
+     $_->hide foreach (CsshX::Master::Socket::Slave->slaves);
+     return $obj->set_mode_and_parse('input', $buffer);
+ } elsif ($buffer =~ s/^\010//) {
+     $_->hide foreach (CsshX::Master::Socket::Slave->slaves);
+     $obj->master->minimise;
+     return $obj->set_mode_and_parse('input', $buffer);
+ }
+ */
+      case Character("x").asciiValue:
+        ctrl.close()
+      default:
+          print("\u{07}")
+    }
   }
-  /*
-   'action' => {
-       prompt => sub {
-           (my $ctrl_str = $config->action_key) =~ s/^\\([0-7]{3})$/"Ctrl-".pack("c",oct($1)+64)/e;
-           my @slaves = CsshX::Master::Socket::Slave->slaves;
-           my @enabled = grep { (! $_->disabled) && $_ } @slaves;
-           "Actions (Esc to exit, $ctrl_str to send $ctrl_str to input)\r\n".
-           "[c]reate window, [r]etile, s[o]rt, [e]nable/disable input, e[n]able all, ".
-           ( (@slaves > 1) && (@enabled == 1) ? "[Space] Enable next " : '').
-           "[t]oggle enabled, [m]inimise, [h]ide, [s]end text, change [b]ounds, ".
-           "chan[g]e [G]rid, e[x]it\r\n";
-       },
-       parse_buffer => sub {
-           my ($obj, $buffer) = @_;
-           my $ctrl = $config->action_key;
-
-           while (length $buffer) {
-               if ($buffer =~ s/^\e//) {
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^($ctrl)//) {
-                   $obj->master->send_terminal_input($1);
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^r//) {
-                   $obj->master->arrange_windows;
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^o//) {
-                   return $obj->set_mode_and_parse('sort', $buffer);
-               } elsif ($buffer =~ s/^c//) {
-                   return $obj->set_mode_and_parse('addhost', $buffer);
-               } elsif ($buffer =~ s/^e//) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       $window->unzoom;
-                   }
-                   return $obj->set_mode_and_parse('enable', $buffer);
-               } elsif ($buffer =~ s/^b//) {
-                   return $obj->set_mode_and_parse('bounds', $buffer);
-               } elsif ($buffer =~ s/^s//) {
-                   return $obj->set_mode_and_parse('sendstring', $buffer);
-               } elsif ($buffer =~ s/^G//) {
-                   my $x = $config->tile_x - 1;
-                   $x = 1 if $x < 1;
-                   $config->set('tile_x', $x);
-                   $obj->master->arrange_windows;
-               } elsif ($buffer =~ s/^g//) {
-                   my $x = $config->tile_x + 1;
-                   my $slaves = scalar CsshX::Master::Socket::Slave->slaves;
-                   $x = $slaves if $x > $slaves;
-                   $config->set('tile_x', $x);
-                   $obj->master->arrange_windows;
-               } elsif ($buffer =~ s/^n//) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       $window->unzoom;
-                       $window->set_disabled(0);
-                   }
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^t//) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       $window->unzoom;
-                       $window->set_disabled(!$window->disabled);
-                   }
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^ //) {
-                   my @enabled = grep {
-                       (! $_->disabled) && $_
-                   } CsshX::Master::Socket::Slave->slaves;
-                   if (@enabled == 1) { $enabled[0]->select_next(); }
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^m//) {
-                   $_->minimise foreach (CsshX::Master::Socket::Slave->slaves);
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^h//) {
-                   $_->hide foreach (CsshX::Master::Socket::Slave->slaves);
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^\010//) {
-                   $_->hide foreach (CsshX::Master::Socket::Slave->slaves);
-                   $obj->master->minimise;
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^x//) {
-                   foreach my $slave (CsshX::Master::Socket::Slave->slaves) {
-                       $slave->close_window;
-                   }
-                   exit 0;
-               } else {
-                   substr($buffer, 0, 1, '');
-                   print "\007";
-               }
-           };
-           $obj->set_read_buffer('');
-       }
-   */
 }
 
 // MARK: -
 extension InputMode {
-  static let bounds = InputMode { ctrl in
+  static let bounds: InputMode = InputMode { ctrl in
     ""
   } onEnable: { ctrl in
 
@@ -564,8 +550,9 @@ extension InputMode {
 
 // MARK: -
 extension InputMode {
-  static let sendString = InputMode { ctrl in
-    ""
+  static let sendString: InputMode = InputMode { ctrl in
+    return "Send string to all active windows: (Esc to exit)\r\n" +
+    "[h]ostname, [c]onnection string, window [i]d, [s]lave id"
   } onEnable: { ctrl in
 
   } parseInput: { ctrl, data in
@@ -573,8 +560,6 @@ extension InputMode {
   }
   /*
    'sendstring' => {
-       prompt => sub { "Send string to all active windows: (Esc to exit)\r\n".
-       "[h]ostname, [c]onnection string, window [i]d, [s]lave id" },
        parse_buffer => sub {
            my ($obj, $buffer) = @_;
            while (length $buffer) {
@@ -615,7 +600,7 @@ extension InputMode {
 
 // MARK: -
 extension InputMode {
-  static let sort = InputMode { ctrl in
+  static let sort: InputMode = InputMode { ctrl in
     ""
   } onEnable: { ctrl in
 
@@ -652,7 +637,7 @@ extension InputMode {
 
 // MARK: -
 extension InputMode {
-  static let enable = InputMode { ctrl in
+  static let enable: InputMode = InputMode { ctrl in
     ""
   } onEnable: { ctrl in
 
@@ -724,7 +709,7 @@ extension InputMode {
 
 // MARK: -
 extension InputMode {
-  static let addHost = InputMode(raw: false) { ctrl in
+  static let addHost: InputMode = InputMode(raw: false) { ctrl in
     ""
   } onEnable: { ctrl in
 

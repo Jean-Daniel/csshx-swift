@@ -31,7 +31,6 @@ private func quote(arg: String) -> String {
   // use single quotes, and put single quotes into double quotes
   // the string $'b is then quoted as '$'"'"'b'
   return "'" + arg.replacing("'", with: #"'"'"'"#) + "'"
-
 }
 
 extension Terminal {
@@ -63,14 +62,13 @@ extension Terminal {
       }
     }
 
-    func tty() -> String? {
+    func tty() -> dev_t {
       guard let tty = tab.tty else {
-        return nil
+        return 0
       }
-      if tty.hasPrefix("/dev/") {
-        return String(tty.dropFirst(5))
-      }
-      return tty
+      var st = stat()
+      guard stat(tty, &st) == 0 else { return 0 }
+      return st.st_rdev
     }
     
     // MARK: Window Management
@@ -229,6 +227,7 @@ extension Terminal.Tab {
   }
 }
 
+// MARK: -
 struct Screen {
   // my ($cur_bounds, $max_bounds);
   /*

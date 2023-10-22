@@ -29,7 +29,6 @@ extension Csshx {
     var hosts: [String] = []
     
     func run() throws {
-    
       let (settings, hostList) = try Settings.load(hosts, options: options, sshOptions: sshOptions, layoutOptions: layoutOptions)
 
       // TODO: should it be passed as parameter or send though the master socket instead ?

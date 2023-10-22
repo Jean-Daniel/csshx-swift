@@ -53,17 +53,16 @@ dispatch_fd_t _socket(NSString *path, struct sockaddr_un *sockaddr, NSError **er
   return sock;
 }
 
-+ (NSString *)getProcessTTY:(pid_t)pid {
++ (dev_t)getProcessTTY:(pid_t)pid {
   struct kinfo_proc info;
   size_t length = sizeof(struct kinfo_proc);
   int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, pid };
   if (sysctl(mib, 4, &info, &length, NULL, 0) < 0)
-    return nil;
+    return 0;
   if (length == 0)
-    return nil;
+    return 0;
 
-  const char *dev = devname(info.kp_eproc.e_tdev, S_IFCHR);
-  return dev ? [NSString stringWithUTF8String:dev] : nil;
+  return info.kp_eproc.e_tdev;
 }
 
 + (BOOL)setNonBlocking:(dispatch_fd_t)fd error:(NSError **)error {

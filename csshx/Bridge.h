@@ -15,7 +15,7 @@
 
 // Create unix socket
 
-+ (NSString *)getProcessTTY:(pid_t)pid;
++ (dev_t)getProcessTTY:(pid_t)pid;
 
 + (BOOL)setNonBlocking:(dispatch_fd_t)fd error:(NSError **)error;
 
