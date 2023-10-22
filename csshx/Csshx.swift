@@ -20,42 +20,32 @@ struct Csshx {
   // csshx -- controller <options>
   // csshx -- host <options>
 
-  static func main() async throws {
+  static func main() throws {
     let args = CommandLine.arguments.dropFirst()
-    if args.count > 2, args[args.startIndex] == "--" {
+    if args.count >= 2, args[args.startIndex] == "--" {
       switch args[args.startIndex + 1] {
         case "controller":
-          return await Controller.main(argv: Array(args.dropFirst(2)))
+          return ControllerCommand.main(argv: Array(args.dropFirst(2)))
         case "host":
-          return await Host.main(argv: Array(args.dropFirst(2)))
+          return HostCommand.main(argv: Array(args.dropFirst(2)))
         default:
           // Let the launcher fails with argument parsing and report error properly.
           break
       }
     }
-    await Launcher.main(argv: Array(args))
+    Launcher.main(argv: Array(args))
   }
 }
 
-extension AsyncParsableCommand {
+extension ParsableCommand {
   // using 'argv' label to avoid conflict with ParsableCommand.main()
-  fileprivate static func main(argv arguments: [String]) async {
+  fileprivate static func main(argv arguments: [String])  {
     do {
       var command = try parseAsRoot(arguments)
-      if var asyncCommand = command as? AsyncParsableCommand {
-        try await asyncCommand.run()
-      } else {
-        try command.run()
-      }
+      try command.run()
+      dispatchMain()
     } catch {
       exit(withError: error)
     }
   }
 }
-
-
-
-// MARK: - Helper Functions
-
-
-

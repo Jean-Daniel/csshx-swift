@@ -15,9 +15,11 @@
 
 // Create unix socket
 
-+ (BOOL)setNonBlocking:(dispatch_fd_t)socket error:(NSError **)error;
++ (NSString *)getProcessTTY:(pid_t)pid;
 
-+ (dispatch_fd_t)bind:(NSString *)path error:(NSError **)error __attribute__((swift_error(zero_result)));
++ (BOOL)setNonBlocking:(dispatch_fd_t)fd error:(NSError **)error;
+
++ (dispatch_fd_t)bind:(NSString *)path umask:(mode_t)perm error:(NSError **)error __attribute__((swift_error(zero_result)));
 
 + (dispatch_fd_t)connect:(NSString *)path error:(NSError **)error __attribute__((swift_error(zero_result)));
 

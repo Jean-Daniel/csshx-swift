@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import System
 import RegexBuilder
 
 // Host parsing:
@@ -19,7 +20,7 @@ import RegexBuilder
 extension Settings {
 
   // Load settings and create HostList used to resolve target hosts.
-  static func load(_ hosts: [String], options: Config, sshOptions: SSHOptions, layoutOptions: LayoutOptions) async throws -> (Settings, HostList) {
+  static func load(_ hosts: [String], options: Config, sshOptions: SSHOptions, layoutOptions: LayoutOptions) throws -> (Settings, HostList) {
     var hostList = HostList()
     var settings = Settings()
 
@@ -28,7 +29,7 @@ extension Settings {
     }
 
     do {
-      try await hostList.load(clustersFile: URL(filePath: "/etc/clusters"))
+      try hostList.load(clustersFile: "/etc/clusters")
     } catch CocoaError.fileNoSuchFile {
       logger.debug("/etc/clusters does not exists. Skipping it.")
     } catch {
@@ -38,7 +39,7 @@ extension Settings {
     // Load predefined csshrc files
     for file in ["/etc/csshrc", "~/.csshrc"] {
       do {
-        try await settings.load(csshrc: URL(filePath: file), hosts: &hostList)
+        try settings.load(csshrc: FilePath(file), hosts: &hostList)
       } catch CocoaError.fileNoSuchFile {
         logger.debug("\(file) does not exists. Skipping it.")
       } catch {
@@ -48,12 +49,12 @@ extension Settings {
     
     for file in options.hostFiles {
       // Failing if file specified by user does not exists.
-      try await hostList.load(hostFile: URL(filePath: file))
+      try hostList.load(hostFile: FilePath(file))
     }
 
     for file in options.configFiles {
       // Failing if file specified by user does not exists.
-      try await settings.load(csshrc: URL(filePath: file), hosts: &hostList)
+      try settings.load(csshrc: FilePath(file), hosts: &hostList)
     }
 
     options.override(&settings)
@@ -62,21 +63,21 @@ extension Settings {
     return (settings, hostList)
   }
 
-  mutating func load(csshrc file: URL, hosts: inout HostList) async throws {
+  mutating func load(csshrc file: FilePath, hosts: inout HostList) throws {
     var clusters = Set<String>()
     var settings = [String:String]()
 
     let comment = /#.*$/
-    for try await line in file.lines {
+    try file.readLines { line in
       guard let match = line.replacing(comment, with: "").wholeMatch(of: /^\s*(\S+)\s*=\s*(.*?)\s*$/) else {
         logger.warning("invalid csshrc line: \(line)")
-        continue
+        return
       }
       let key = match.output.1
       let value = match.output.2
       if (key == "extra_cluster_file") {
         for extra in value.split(separator: /\s*,\s*/) {
-          try await hosts.load(clustersFile: URL(filePath: String(extra)))
+          try hosts.load(clustersFile: FilePath(String(extra)))
         }
       } else if (key == "clusters") {
         // Insert clusters into the clusters set.
@@ -84,7 +85,7 @@ extension Settings {
       } else if (key == "hosts") {
         // load host file
         for extra in value.split(separator: /\s*,\s*/) {
-          try await hosts.load(hostFile: URL(filePath: String(extra)))
+          try hosts.load(hostFile: FilePath(String(extra)))
         }
       } else {
         settings[String(key)] = String(value)

@@ -76,18 +76,18 @@ struct Op {
     return Op { $0[keyPath: keypath] = try parse($1) }
   }
 
-  static func append<Ty>(_ keypath: WritableKeyPath<Settings, [Ty]>) -> Op where Ty: ExpressibleByStringArgument {
-    return Op {
-      $0[keyPath: keypath].append(try parse($1))
-    }
-  }
+//  static func append<Ty>(_ keypath: WritableKeyPath<Settings, [Ty]>) -> Op where Ty: ExpressibleByStringArgument {
+//    return Op {
+//      $0[keyPath: keypath].append(try parse($1))
+//    }
+//  }
 }
 
 private func parse<Ty>(_ value: String) throws -> Ty where Ty: ExpressibleByStringArgument {
-  if let i = Ty(argument: "") {
-    return i
+  guard let v = Ty(argument: value) else {
+    throw SettingsError.invalidValue
   }
-  throw SettingsError.invalidValue
+  return v
 }
 
 // MARK: Color
@@ -154,10 +154,31 @@ extension Color: ExpressibleByStringArgument {
   }
 }
 
+struct EscapeSequence: ExpressibleByStringArgument {
+  let value: UInt8
+  let ascii: String
+
+  init?(argument: String) {
+    guard let match = argument.wholeMatch(of: EscapeSequence.regex),
+          let value = match.output.1 else {
+      return nil
+    }
+    self.value = value
+    self.ascii = String(Unicode.Scalar(value + 64))
+  }
+
+  private static let regex = Regex {
+    "\\"
+    Capture(Repeat("0"..."7", count: 3)) {
+      UInt8($0, radix: 8)
+    }
+  }
+}
+
 // MARK: - Settings
 struct Settings {
 
-  var actionKey: String = "\\001"
+  var actionKey: EscapeSequence = EscapeSequence(argument: "\\001")!
 
   var selectedForeground: Color?
   var selectedBackground: Color? = Color(red: 17990, green: 35209, blue: 53456)
@@ -189,7 +210,7 @@ struct Settings {
   var pingTest: Bool = false
   var pingTimeout: Int = 2
 
-  var socket: String = ""
+  var socket: String? = nil
 
   var ssh: String = "ssh"
   var interleave: Int = 0

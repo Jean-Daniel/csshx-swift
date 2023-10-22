@@ -6,6 +6,8 @@
 //
 
 import ArgumentParser
+
+import System
 import Foundation
 import RegexBuilder
 
@@ -115,7 +117,7 @@ struct SSHOptions: ParsableArguments {
 
   @Flag(name: [.long, .customLong("ping")],
         help: ArgumentHelp("Make csshX ping each host/port before opening ssh connections",
-                          discussion: """
+                           discussion: """
                         To avoid opening connections to machines that are down, or not running
                         sshd, this option will make csshX ping each host/port that is specified.
                         This uses the Net::Ping module to perform a simple syn/ack check.
@@ -174,13 +176,13 @@ struct Config: ParsableArguments {
                             communication. This may be set by the user in the launcher session,
                             possibly for security reasons.
                             """),
-          completion: .file()) 
+          completion: .file())
   var socket: String?
 
   @Flag(help: ArgumentHelp("Enable debugging behaviors.",
-                          discussion: """
-                        Enables backtrace on fatal errors, and keeps terminal windows open after terminating (so you can see any errors).
-                        """))
+                           discussion: """
+                         Enables backtrace on fatal errors, and keeps terminal windows open after terminating (so you can see any errors).
+                         """))
   var debug: Bool = false
 
   func override(_ settings: inout Settings) {
@@ -188,4 +190,3 @@ struct Config: ParsableArguments {
     settings.debug = settings.debug || debug
   }
 }
-

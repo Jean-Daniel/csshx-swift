@@ -9,35 +9,99 @@ import Foundation
 import ArgumentParser
 
 extension Csshx {
-  struct Controller: AsyncParsableCommand {
+  struct ControllerCommand: ParsableCommand {
 
-    @Option var socket: String
+    @Option var windowId: CGWindowID
+    @Option var tabIdx: Int
 
-    @Option var launchpid: Int
+    @Option var launchpid: pid_t = 0
 
-    func run() async throws {
-      
-      Task {
-        for await _ in DispatchSource.signals(SIGWINCH) {
-          // TODO: need redraw
+    @OptionGroup(title:"Options")
+    var options: Config
 
-        }
+    @OptionGroup(title:"SSH Options")
+    var sshOptions: SSHOptions
+
+    @OptionGroup(title:"Layout Options")
+    var layoutOptions: LayoutOptions
+
+    @Argument(help: "The hosts to connect.")
+    var hosts: [String] = []
+    
+    func run() throws {
+    
+      let (settings, hostList) = try Settings.load(hosts, options: options, sshOptions: sshOptions, layoutOptions: layoutOptions)
+
+      // TODO: should it be passed as parameter or send though the master socket instead ?
+      var hosts = try hostList.getHosts(limit: settings.pingTest ? 2048 : settings.sessionMax)
+
+      let socket = settings.socket ?? FileManager.default.temporaryDirectory.appendingPathComponent("csshx.\(UUID()).sock").path
+
+      signal(SIGINT, SIG_IGN)
+      signal(SIGTSTP, SIG_IGN)
+      signal(SIGPIPE, SIG_IGN)
+
+      let ctrl = try Controller(tab: try Terminal.Tab(window: windowId, tab: tabIdx), socket: socket, settings: settings)
+      // Start listening socket
+      try ctrl.listen()
+
+      // Start UI
+      try ctrl.runInputLoop()
+
+      // Signal the launcher that the socket is ready
+      if (launchpid > 0 && kill(launchpid, SIGUSR1) < 0) {
+        let err = errno
+        logger.warning("launcher signaling failed: \(err)")
       }
 
-      let listener = try IOListener.listen(socket: socket)
-      defer { listener.close() }
+      // Prepare host list
+      if (settings.sortHosts) {
+        hosts.sort { $0.hostname < $1.hostname }
+      }
 
-      for try await connection in listener.connections() {
-        print("on open connection")
-        Task {
-          // Read and dispatch input
-          print("waiting data")
-          for try await data in connection.read() {
-            try await connection.write(data)
+      if (settings.interleave > 1) {
+        var cur = 0
+        var wrap = 0
+        var new_hosts = [Target]()
+        for _ in 0..<hosts.count {
+          new_hosts.append(hosts[cur])
+          cur += settings.interleave
+          if (cur >= hosts.count) {
+            wrap += 1
+            cur = wrap
           }
-          connection.close()
+        }
+        hosts = new_hosts
+      }
+
+      // Starting all host in //
+      let group = DispatchGroup()
+      for host in hosts {
+        group.enter()
+
+        do {
+          try ctrl.add(host: host) { error in
+            group.leave()
+          }
+        } catch {
+          logger.error("error while starting host \(host.hostname): \(error)")
+          group.leave()
         }
       }
+
+      group.notify(queue: .main) {
+        logger.info("All hosts started -> Notify controller")
+        do {
+          try ctrl.ready()
+        } catch {
+          logger.error("ready failed with error: \(error)")
+          ctrl.close()
+        }
+      }
+
+      // for await _ in DispatchSource.signals(SIGWINCH) {
+      //   await ctrl.setNeedsRedraw()
+      // }
 
       // Start listening on
       /*
@@ -74,7 +138,6 @@ extension Csshx {
                $obj->redraw if $need_redraw;
                $obj->title("Master - ".join ", ", grep { defined }
                    map { $_->hostname } CsshX::Master::Socket::Slave->slaves);
-               #$obj->title("Master - ".$obj->slave_count." connections");
                $obj->handle_io();
            }
            unlink $sock;
@@ -89,46 +152,6 @@ extension Csshx {
          my $client = $obj->accept("CsshX::Master::Socket::Unknown");
          $client->set_master($obj);
          $obj->readers->add($client);
-     }
-
-     sub send_terminal_input {
-         my ($obj, $buffer) = @_;
-         if (length $buffer) {
-             foreach my $client ($obj->slaves) {
-                 $client->send_input($buffer) unless $client->disabled;
-             }
-         }
-     }
-
-     sub set_launcher { *{$_[0]}->{launcher} = $_[1]; }
-     sub launcher     { *{$_[0]}->{launcher};         }
-
-     sub set_prompt   { *{$_[0]}->{prompt} = $_[1]; $need_redraw = 1; }
-     sub prompt       { *{$_[0]}->{prompt};         }
-
-     sub slaves       { CsshX::Master::Socket::Slave->slaves; }
-     sub slave_count  { CsshX::Master::Socket::Slave->slave_count; }
-
-     sub register_slave {
-         my ($obj, $slaveid, $hostname, $win_id, $tab_id) = @_;
-         eval {
-             my $slave = CsshX::Master::Socket::Slave->get_by_slaveid($slaveid) ||
-                         CsshX::Master::Socket::Slave->new($slaveid);
-
-             $slave->set_windowid($win_id) if $win_id;
-             $slave->set_tabid($tab_id)    if $win_id; # Yes - tab_id can be 0
-             $slave->set_hostname($hostname) if $hostname;
-             $slave->set_master($obj);
-
-             return $slave;
-         };
-     }
-
-     sub redraw {
-         my ($obj) = @_;
-         $obj->clear;
-         print $obj->prompt;
-         $need_redraw = 0;
      }
 
      sub arrange_windows {

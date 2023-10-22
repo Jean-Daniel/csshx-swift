@@ -55,6 +55,13 @@ extension Sequence where Element == String {
   }
 }
 
+public extension Sequence {
+  @inlinable
+  func count(where predicate: (Element) throws -> Bool) rethrows -> Int {
+    try reduce(0) { try predicate($1) ? $0 + 1 : $0 }
+  }
+}
+
 extension POSIXError {
 
   static var errno: POSIXError {
@@ -65,3 +72,42 @@ extension POSIXError {
     self.init(POSIXErrorCode(rawValue: errno) ?? .EINVAL)
   }
 }
+
+struct stty {
+
+  static func clear() { print("\u{001b}[1J\u{001b}[0;0H") }
+
+  @discardableResult
+  static func set(attr: termios) throws -> termios {
+    var current = termios()
+    if (tcgetattr(STDIN_FILENO, &current) < 0) {
+      throw POSIXError.errno
+    }
+
+    var t = attr
+    if (tcsetattr(STDIN_FILENO, 0, &t) < 0) {
+      throw POSIXError.errno
+    }
+    return current
+  }
+
+  // Replicate 'stty raw'
+  static func raw() throws -> termios {
+    var current = termios()
+    if (tcgetattr(STDIN_FILENO, &current) < 0) {
+      throw POSIXError.errno
+    }
+
+    var t = current
+    // copied from stty sources
+    cfmakeraw(&t)
+    t.c_cflag &= ~UInt(CSIZE|PARENB)
+    t.c_cflag |= UInt(CS8)
+
+    if (tcsetattr(STDIN_FILENO, 0, &t) < 0) {
+      throw POSIXError.errno
+    }
+    return current
+  }
+}
+

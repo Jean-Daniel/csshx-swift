@@ -36,7 +36,7 @@ private func quote(arg: String) -> String {
 
 extension Terminal {
 
-  struct Tab {
+  struct Tab: Equatable {
 
     let tab: TerminalTab
     let window: TerminalWindow
@@ -45,13 +45,34 @@ extension Terminal {
     let tabIdx: Int
     let windowId: CGWindowID
 
-    func run(args: [String]) throws {
-      let script = args.map(quote(arg:)).joined(separator: " ")
+    static func == (lhs: Tab, rhs: Tab) -> Bool {
+      return lhs.tabIdx == rhs.tabIdx && lhs.windowId == rhs.windowId
+    }
+
+    func run(args: [String], clear: Bool, exec: Bool) throws {
+      var script = " " // space to ignore history in fish
+      if clear {
+        script.append("clear && ")
+      }
+      if exec {
+        script.append("exec ")
+      }
+      script += args.map(quote(arg:)).joined(separator: " ")
       guard terminal.doScript(script, in: tab) == tab else {
         throw ScriptingBridgeError()
       }
     }
 
+    func tty() -> String? {
+      guard let tty = tab.tty else {
+        return nil
+      }
+      if tty.hasPrefix("/dev/") {
+        return String(tty.dropFirst(5))
+      }
+      return tty
+    }
+    
     // MARK: Window Management
     func bounds() -> CGRect {
       return window.bounds
@@ -159,6 +180,18 @@ extension Terminal {
 
 
 extension Terminal.Tab {
+
+  init(window: CGWindowID, tab: Int) throws {
+    guard let bridge = TerminalApplication(bundleIdentifier: TerminalBundleId) else {
+      throw ScriptingBridgeError()
+    }
+
+    guard let w = bridge.windows().object(withID: window) as? TerminalWindow,
+          let t =  w.tabs().object(at: tab) as? TerminalTab else {
+      throw ScriptingBridgeError()
+    }
+    self.init(tab: t, window: w, terminal: bridge, tabIdx: tab, windowId: window)
+  }
 
   static func open() throws -> Self {
     guard let bridge = TerminalApplication(bundleIdentifier: TerminalBundleId) else {

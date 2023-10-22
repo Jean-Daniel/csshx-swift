@@ -6,9 +6,11 @@
 //
 
 import Foundation
+
+import System
 import RegexBuilder
 
-struct Target {
+struct Target: Equatable {
   let user: String?
   let hostname: String // may be an host template.
   let port: UInt16?
@@ -17,7 +19,7 @@ struct Target {
 
 struct HostList {
 
-  struct HostSpec {
+  private struct HostSpec {
     let user: String?
     let hostname: String
     let port: String? // may be a port range
@@ -59,7 +61,7 @@ struct HostList {
     return resolved
   }
 
-  private let repeatPattern = Regex {
+  private static let repeatPattern = Regex {
     Capture(OneOrMore(.any, .reluctant))
     "+"
     Capture {
@@ -72,13 +74,13 @@ struct HostList {
     // 192.168.0.1+3
 
     // Check for repeat pattern
-    if let match = host.hostname.wholeMatch(of: repeatPattern) {
+    if let match = host.hostname.wholeMatch(of: Self.repeatPattern) {
       // expand single entry, and then repeat
       let count = match.output.2
 
       // Ensure repeat count is greater than 1, and that this is not a recursive pattern.
       guard count > 1,
-            match.output.1.wholeMatch(of: repeatPattern) == nil else {
+            match.output.1.wholeMatch(of: Self.repeatPattern) == nil else {
         logger.warning("invalid repeat pattern: \(host.hostname)")
         throw POSIXError(.EINVAL)
       }
@@ -210,13 +212,13 @@ struct HostList {
     return result
   }
 
-  private let intRange = Regex {
+  private static let intRange = Regex {
     Capture(OneOrMore(.digit)) { Int($0)! }
     "-"
     Capture(OneOrMore(.digit)) { Int($0)! }
   }
 
-  private let alphaRange = Regex {
+  private static let alphaRange = Regex {
     ChoiceOf {
       Regex {
         Capture("a"..."z") { $0.first!.asciiValue! }
@@ -241,7 +243,7 @@ struct HostList {
       }
       into.append(range)
       return true
-    } else if let match = range.wholeMatch(of: intRange) {
+    } else if let match = range.wholeMatch(of: Self.intRange) {
       let start = match.output.1
       let end = match.output.2
       guard start < end else {
@@ -256,7 +258,7 @@ struct HostList {
         into.append(String(i))
       }
       return true
-    } else if let match = range.wholeMatch(of: alphaRange) {
+    } else if let match = range.wholeMatch(of: Self.alphaRange) {
       // if start and end are lowercase alpha -> return lower char range
       // if start and end are uppercase alpha -> return upper char range
       guard let start = match.1 ?? match.3, let end = match.2 ?? match.4 else {
@@ -295,9 +297,9 @@ struct HostList {
     }
   }
 
-  private let commentExpr = /#.*$/
+  private static let commentExpr = /#.*$/
 
-  private let hostFileLine = Regex {
+  private static let hostFileLine = Regex {
     Capture {
       OneOrMore(.whitespace.inverted)
     }
@@ -309,26 +311,26 @@ struct HostList {
     }
   }
 
-  mutating func load(hostFile file: URL) async throws {
+  mutating func load(hostFile file: FilePath) throws {
     // Read each line of the data as it becomes available.
-    for try await line in file.lines {
+    try file.readLines { line in
       // Strip comment (remove anything after '#')
-      guard let match = line.replacing(commentExpr, with: "").wholeMatch(of: hostFileLine) else {
-        continue
+      guard let match = line.replacing(Self.commentExpr, with: "").wholeMatch(of: Self.hostFileLine) else {
+        return
       }
       try add(String(match.output.1), command: match.output.2.flatMap(String.init))
     }
   }
 
-  mutating func load(clustersFile file: URL) async throws {
+  mutating func load(clustersFile file: FilePath) throws {
     // Read each line of the data as it becomes available.
-    for try await line in file.lines {
+    try file.readLines { line in
       // Strip comment (remove anything after '#')
-      let components = line.replacing(commentExpr, with: "")
+      let components = line.replacing(Self.commentExpr, with: "")
       // Split using all whitespaces as delimiter
         .split(separator: OneOrMore(.whitespace))
 
-      guard components.count > 1 else { continue }
+      guard components.count > 1 else { return }
 
       // the first entry is a cluster name, following entries are matching hosts
       let cluster = String(components.first!)

@@ -9,6 +9,7 @@
 
 #import <libc.h>
 #import <sys/un.h>
+#import <sys/sysctl.h>
 
 @implementation Bridge
 
@@ -52,10 +53,23 @@ dispatch_fd_t _socket(NSString *path, struct sockaddr_un *sockaddr, NSError **er
   return sock;
 }
 
-+ (BOOL)setNonBlocking:(dispatch_fd_t)socket error:(NSError **)error {
++ (NSString *)getProcessTTY:(pid_t)pid {
+  struct kinfo_proc info;
+  size_t length = sizeof(struct kinfo_proc);
+  int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, pid };
+  if (sysctl(mib, 4, &info, &length, NULL, 0) < 0)
+    return nil;
+  if (length == 0)
+    return nil;
+
+  const char *dev = devname(info.kp_eproc.e_tdev, S_IFCHR);
+  return dev ? [NSString stringWithUTF8String:dev] : nil;
+}
+
++ (BOOL)setNonBlocking:(dispatch_fd_t)fd error:(NSError **)error {
   // According to the man page, F_GETFL can't error!
-  int flags = fcntl(socket, F_GETFL, NULL);
-  if (fcntl(socket, F_SETFL, flags | O_NONBLOCK) != 0) {
+  int flags = fcntl(fd, F_GETFL, NULL);
+  if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
     *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
     return NO;
   }
@@ -83,7 +97,7 @@ static inline socklen_t socklen(struct sockaddr_un *addr) {
   return sock;
 }
 
-+ (dispatch_fd_t)bind:(NSString *)path error:(NSError **)error {
++ (dispatch_fd_t)bind:(NSString *)path umask:(mode_t)perm error:(NSError **)error {
   struct sockaddr_un addr = {};
   dispatch_fd_t sock = _socket(path, &addr, error);
   if (sock <= 0)
@@ -91,6 +105,7 @@ static inline socklen_t socklen(struct sockaddr_un *addr) {
 
   // Ensure the file does not exists before binding
   unlink([path fileSystemRepresentation]);
+  // TODO: set umask before binding the socket
   if (bind(sock, (struct sockaddr *)&addr, socklen(&addr)) < 0) {
     *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
     close(sock);
