@@ -4,7 +4,7 @@
 
 //#import <AppKit/AppKit.h>
 #import <ScriptingBridge/ScriptingBridge.h>
-
+#import <AppKit/AppKit.h>
 
 @class TerminalApplication, TerminalWindow, TerminalSettingsSet, TerminalTab;
 
@@ -103,12 +103,10 @@ typedef enum TerminalPrintingErrorHandling TerminalPrintingErrorHandling;
 @property (copy) NSString *name;  // The name of the settings set.
 @property NSInteger numberOfRows;  // The number of rows displayed in the tab.
 @property NSInteger numberOfColumns;  // The number of columns displayed in the tab.
-#if defined(APPKIT_EXTERN)
 @property (copy) NSColor *cursorColor;  // The cursor color for the tab.
 @property (copy) NSColor *backgroundColor;  // The background color for the tab.
 @property (copy) NSColor *normalTextColor;  // The normal text color for the tab.
 @property (copy) NSColor *boldTextColor;  // The bold text color for the tab.
-#endif
 @property (copy) NSString *fontName;  // The name of the font used to display the tab’s contents.
 @property NSInteger fontSize;  // The size of the font used to display the tab’s contents.
 @property BOOL fontAntialiasing;  // Whether the font used to display the tab’s contents is antialiased.
@@ -137,21 +135,18 @@ typedef enum TerminalPrintingErrorHandling TerminalPrintingErrorHandling;
 @property (copy) NSString *customTitle;  // The tab’s custom title.
 @property (copy, readonly) NSString *tty;  // The tab’s TTY device.
 @property (copy) TerminalSettingsSet *currentSettings;  // The set of settings which control the tab’s behavior and appearance.
-#if defined(APPKIT_EXTERN)
-@property (copy) NSColor *cursorColor;  // The cursor color for the tab.
-@property (copy) NSColor *backgroundColor;  // The background color for the tab.
-@property (copy) NSColor *normalTextColor;  // The normal text color for the tab.
-@property (copy) NSColor *boldTextColor;  // The bold text color for the tab.
-#endif
-@property (copy) NSArray<NSString *> *cleanCommands;  // The processes which will be ignored when checking whether a tab can be closed without showing a prompt.
-@property BOOL titleDisplaysDeviceName;  // Whether the title contains the device name.
-@property BOOL titleDisplaysShellPath;  // Whether the title contains the shell path.
-@property BOOL titleDisplaysWindowSize;  // Whether the title contains the tab’s size, in rows and columns.
-@property BOOL titleDisplaysFileName;  // Whether the title contains the file name.
-@property (copy) NSString *fontName;  // The name of the font used to display the tab’s contents.
-@property NSInteger fontSize;  // The size of the font used to display the tab’s contents.
-@property BOOL fontAntialiasing;  // Whether the font used to display the tab’s contents is antialiased.
-
+@property (copy) NSColor *cursorColor DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // The cursor color for the tab.
+@property (copy) NSColor *backgroundColor DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // The background color for the tab.
+@property (copy) NSColor *normalTextColor DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // The normal text color for the tab.
+@property (copy) NSColor *boldTextColor DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // The bold text color for the tab.
+@property (copy) NSArray<NSString *> *cleanCommands DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // The processes which will be ignored when checking whether a tab can be closed without showing a prompt.
+@property BOOL titleDisplaysDeviceName DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // Whether the title contains the device name.
+@property BOOL titleDisplaysShellPath DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // Whether the title contains the shell path.
+@property BOOL titleDisplaysWindowSize DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // Whether the title contains the tab’s size, in rows and columns.
+@property BOOL titleDisplaysFileName DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // Whether the title contains the file name.
+@property (copy) NSString *fontName DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // The name of the font used to display the tab’s contents.
+@property NSInteger fontSize DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // The size of the font used to display the tab’s contents.
+@property BOOL fontAntialiasing DEPRECATED_MSG_ATTRIBUTE("use currentSettings instead.");  // Whether the font used to display the tab’s contents is antialiased.
 
 @end
 

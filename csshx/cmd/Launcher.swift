@@ -57,21 +57,6 @@ extension Csshx {
 
       let tab = try Terminal.Tab.open()
 
-      let csshx = URL(filePath: CommandLine.arguments[0]).standardizedFileURL
-      var args: [String] = [
-        csshx.path, "--", "controller",
-        "--launchpid", "\(getpid())",
-        "--window-id", "\(tab.windowId)",
-        "--tab-idx", "\(tab.tabIdx)"
-      ]
-      // Do not exec in debug mode
-      if settings.debug {
-        args.remove(at: 2)
-      }
-      
-      // forward all arguments
-      args.append(contentsOf: CommandLine.arguments.dropFirst())
-
       // Set profile first.
       if let profile = settings.controllerWindowProfile {
         if (!tab.setProfile(profile)) {
@@ -94,6 +79,21 @@ extension Csshx {
         }
         Foundation.exit(1)
       }
+
+      let csshx = URL(filePath: CommandLine.arguments[0]).standardizedFileURL
+      var args: [String] = [
+        csshx.path, "--", "controller",
+        "--launchpid", "\(getpid())",
+        "--window-id", "\(tab.windowId)",
+        "--tab-idx", "\(tab.tabIdx)"
+      ]
+      // Do not exec in debug mode
+      if settings.debug {
+        args.remove(at: 2)
+      }
+
+      // forward all arguments
+      args.append(contentsOf: CommandLine.arguments.dropFirst())
 
       try tab.run(args: args, clear: true, exec: !settings.debug)
 

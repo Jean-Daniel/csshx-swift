@@ -35,6 +35,23 @@ private func quote(arg: String) -> String {
 
 extension Terminal {
 
+  // MARK: Color
+  struct Color: Sendable {
+    let red: CGFloat
+    let green: CGFloat
+    let blue: CGFloat
+
+    init(red: CGFloat, green: CGFloat, blue: CGFloat) {
+      self.red = red
+      self.green = green
+      self.blue = blue
+    }
+
+    fileprivate func asNSColor() -> NSColor {
+      return NSColor(srgbRed: red, green: green, blue: blue, alpha: 0)
+    }
+  }
+
   struct Tab: Equatable {
 
     let tab: TerminalTab
@@ -117,6 +134,12 @@ extension Terminal {
       }
     }
 
+    // Return orignal profile, and not current settings.
+    private func getProfile() -> TerminalSettingsSet? {
+      guard let name = tab.currentSettings.name else { return nil }
+      return terminal.settingsSets().object(withName: name) as? TerminalSettingsSet
+    }
+
     func setProfile(_ profile: String) -> Bool {
       guard let settings = terminal.settingsSets().object(withName: profile) as? TerminalSettingsSet else {
         // should never fails as it only create an ObjectDescriptor
@@ -127,55 +150,25 @@ extension Terminal {
       return tab.currentSettings.name == profile
     }
 
-    // var uid: String { "\(window.id),\(id)" }
+    func setTextColor(color: Color?) {
+      if let c = color?.asNSColor() ?? getProfile()?.normalTextColor {
+        tab.currentSettings.normalTextColor = c
+      }
+    }
 
-    /*
-     sub set_bg_color {
-         my ($obj, $bg_color) = @_;
-         $obj->tabobj->setBackgroundColor_($obj->make_NSColor($bg_color));
-     }
-
-     sub set_fg_color {
-         my ($obj, $fg_color) = @_;
-         $obj->tabobj->setNormalTextColor_($obj->make_NSColor($fg_color));
-     }
-
-     sub store_bg_color {
-         my ($obj, $bg) = @_;
-         *$obj->{'stored_bg_color'} = $obj->tabobj->backgroundColor();
-     }
-
-     sub store_fg_color {
-         my ($obj, $fg) = @_;
-         *$obj->{'stored_fg_color'} = $obj->tabobj->normalTextColor();
-     }
-
-     sub fetch_bg_color {
-         my ($obj) = @_;
-         return *$obj->{'stored_bg_color'} || '';
-     }
-
-     sub fetch_fg_color {
-         my ($obj) = @_;
-         return *$obj->{'stored_fg_color'} || '';
-     }
-
-     sub set_settings_set {
-         my ($obj,$want) = @_;
-         my $sets = $terminal->settingsSets;
-         for (my $i=0; $i<$sets->count; $i++) {
-             my $set = $sets->objectAtIndex_($i);
-             if ($set->name->UTF8String eq $want) {
-                 $obj->tabobj->setCurrentSettings_($set);
-                 return 1;
-             }
-         }
-         return;
-     }
-     */
+    func setBackgroundColor(color: Color?) {
+      if let c = color?.asNSColor() ?? getProfile()?.backgroundColor {
+        tab.currentSettings.backgroundColor = c
+      }
+    }
   }
 }
 
+private class TerminalApplicationDelegate: SBApplicationDelegate {
+  func eventDidFail(_ event: UnsafePointer<AppleEvent>, withError error: Error) -> Any? {
+    logger.warning("apple event did failed with error: \(error)")
+  }
+}
 
 extension Terminal.Tab {
 
@@ -183,6 +176,7 @@ extension Terminal.Tab {
     guard let bridge = TerminalApplication(bundleIdentifier: TerminalBundleId) else {
       throw ScriptingBridgeError()
     }
+    bridge.delegate = TerminalApplicationDelegate()
 
     guard let w = bridge.windows().object(withID: window) as? TerminalWindow,
           let t =  w.tabs().object(at: tab) as? TerminalTab else {
@@ -195,6 +189,7 @@ extension Terminal.Tab {
     guard let bridge = TerminalApplication(bundleIdentifier: TerminalBundleId) else {
       throw ScriptingBridgeError()
     }
+    bridge.delegate = TerminalApplicationDelegate()
 
     guard let tab = bridge.doScript("", in: 0) else {
       throw ScriptingBridgeError()
@@ -222,7 +217,7 @@ extension Terminal.Tab {
     return Terminal.Tab(tab: tab, 
                         window: window,
                         terminal: bridge,
-                        tabIdx: Int(tabIdx),
+                        tabIdx: Int(tabIdx - 1), // convert to 0 based index, as it will be converted back by object(at:)
                         windowId: CGWindowID(windowId.int32Value))
   }
 }
@@ -230,6 +225,7 @@ extension Terminal.Tab {
 // MARK: -
 struct Screen {
   // my ($cur_bounds, $max_bounds);
+
   /*
    sub screen_bounds {
        my ($obj) = @_;

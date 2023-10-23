@@ -18,6 +18,13 @@ extension Bool: ExpressibleByStringArgument {}
 extension Int: ExpressibleByStringArgument {}
 extension Int32: ExpressibleByStringArgument {}
 extension String: ExpressibleByStringArgument {}
+// Using CGFloat for convenience, but still accepting only integer
+extension CGFloat: ExpressibleByStringArgument {
+  init?(argument: String) {
+    guard let value = Int(argument: argument) else { return nil }
+    self.init(value)
+  }
+}
 
 // MARK: CGRect
 
@@ -90,13 +97,6 @@ private func parse<Ty>(_ value: String) throws -> Ty where Ty: ExpressibleByStri
   return v
 }
 
-// MARK: Color
-struct Color: Sendable {
-  let red: CGFloat
-  let green: CGFloat
-  let blue: CGFloat
-}
-
 // {65535,3243,16534}
 private let intValueRegex = Regex {
   Capture {
@@ -133,7 +133,7 @@ private let hexColorRegex = Regex {
   Anchor.endOfLine
 }
 
-extension Color: ExpressibleByStringArgument {
+extension Terminal.Color: ExpressibleByStringArgument {
   init?(argument: String) {
     if let rgb = argument.wholeMatch(of: rgbColorRegex) {
       guard let r = rgb.output.1, let g = rgb.output.2, let b = rgb.output.3 else {
@@ -151,6 +151,13 @@ extension Color: ExpressibleByStringArgument {
       logger.warning("invalid color string: \(argument)")
       return nil
     }
+  }
+
+  // using terminal colors
+  init(red: Int, green: Int, blue: Int) {
+    self.red = CGFloat(red) / 65535
+    self.green = CGFloat(green) / 65535
+    self.blue = CGFloat(blue) / 65535
   }
 }
 
@@ -180,19 +187,19 @@ struct Settings {
 
   var actionKey: EscapeSequence = EscapeSequence(argument: "\\001")!
 
-  var selectedForeground: Color?
-  var selectedBackground: Color? = Color(red: 17990, green: 35209, blue: 53456)
+  var selectedForeground: Terminal.Color?
+  var selectedBackground: Terminal.Color? = Terminal.Color(red: 17990, green: 35209, blue: 53456)
 
-  var disabledForeground: Color? = Color(red: 37779, green: 37779, blue: 37779)
-  var disabledBackground: Color?
+  var disabledForeground: Terminal.Color? = Terminal.Color(red: 37779, green: 37779, blue: 37779)
+  var disabledBackground: Terminal.Color?
 
-  var controllerForeground: Color? = Color(red: 65535, green: 65535, blue: 65535)
-  var controllerBackground: Color? = Color(red: 38036, green: 0, blue: 0)
+  var controllerForeground: Terminal.Color? = Terminal.Color(red: 65535, green: 65535, blue: 65535)
+  var controllerBackground: Terminal.Color? = Terminal.Color(red: 38036, green: 0, blue: 0)
 
-  var resizingForeground: Color?
-  var resizingBackground: Color? = Color(red: 17990, green: 35209, blue: 53456)
+  var resizingForeground: Terminal.Color?
+  var resizingBackground: Terminal.Color? = Terminal.Color(red: 17990, green: 35209, blue: 53456)
 
-  var controllerHeight: Int = 87 // Pixels ?
+  var controllerHeight: CGFloat = 87 // Pixels ?
   var screenBounds: CGRect? = nil
 
   var rows: Int = 0

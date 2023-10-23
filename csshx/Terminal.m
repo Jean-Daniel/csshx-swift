@@ -466,7 +466,6 @@ static const codeForPropertyName_t codeForPropertyNameData__[] = {
 	[[self propertyWithCode:'ccol'] setTo:v];
 }
 
-#if defined(APPKIT_EXTERN)
 - (NSColor *) cursorColor
 {
 	return [[self propertyWithCode:'pcuc'] get];
@@ -506,7 +505,6 @@ static const codeForPropertyName_t codeForPropertyNameData__[] = {
 {
 	[[self propertyWithCode:'pbtc'] setTo:boldTextColor];
 }
-#endif
 
 - (NSString *) fontName
 {
@@ -759,7 +757,6 @@ static const codeForPropertyName_t codeForPropertyNameData__[] = {
 	[[self propertyWithClass:[TerminalSettingsSet class] code:'tcst'] setTo:currentSettings];
 }
 
-#if defined(APPKIT_EXTERN)
 - (NSColor *) cursorColor
 {
 	return [[self propertyWithCode:'pcuc'] get];
@@ -799,7 +796,6 @@ static const codeForPropertyName_t codeForPropertyNameData__[] = {
 {
 	[[self propertyWithCode:'pbtc'] setTo:boldTextColor];
 }
-#endif
 
 - (NSArray<NSString *> *) cleanCommands
 {

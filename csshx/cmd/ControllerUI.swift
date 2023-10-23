@@ -33,6 +33,8 @@ class HostWindow: Equatable {
     connection?.close(flags: .stop)
     connection = nil
     enabled = false
+    // Closing window in case the profile does not close window automatically
+    // tab.close()
   }
 
   static func == (lhs: HostWindow, rhs: HostWindow) -> Bool {
@@ -63,6 +65,8 @@ class Controller {
     self.socket = socket
     self.settings = settings
     self.buffer.reserveCapacity(256)
+
+    layoutControllerWindow()
   }
 
   func close() {
@@ -73,6 +77,7 @@ class Controller {
 
   func ready() throws {
     if inputMode == .starting {
+      // TODO: layout hosts window
       try setInputMode(.input)
     }
   }
@@ -90,17 +95,6 @@ class Controller {
           terminate(host: host)
         }
       }
-    }
-  }
-
-  private func terminate(host: HostWindow) {
-    guard let idx = hosts.firstIndex(of: host) else {
-      return
-    }
-    hosts.remove(at: idx).terminate()
-    if (hosts.isEmpty) {
-      // Terminate input loop if is running
-      close()
     }
   }
 
@@ -184,6 +178,32 @@ class Controller {
       // No mode change, exit the loop
       if (id != inputMode.id) { break }
     }
+  }
+
+  private func layoutControllerWindow() {
+    // my $mh = $config->master_height;
+    // my ($x,$y,$w,$h) = @{$obj->screen_bounds};
+
+    if let color = settings.controllerBackground {
+      tab.setBackgroundColor(color: color)
+    }
+
+    if let color = settings.controllerForeground {
+      tab.setTextColor(color: color)
+    }
+
+//    let screen: CGRect = CGRect.zero
+//
+//    tab.window.miniaturized = false
+//    tab.window.bounds = CGRect(origin: screen.origin, size: CGSize(width: screen.width, height: settings.controllerHeight))
+
+//    // Now check the height of the terminal window in case it's larger than
+//    // expected, if so, move it off the bottom of the screen if possible
+//    let real = tab.window.size
+//    if (real.y > settings.controllerHeight) {
+//      tab.window.origin = CGPoint(x: screen.origin.x, y: screen.origin.y - (real.y - settings.controllerHeight))
+//    }
+//    tab.window.frontmost = true
   }
 }
 
@@ -316,6 +336,18 @@ extension Controller {
       }
     }
   }
+
+  func terminate(host: HostWindow) {
+    guard let idx = hosts.firstIndex(of: host) else {
+      return
+    }
+    hosts.remove(at: idx).terminate()
+    if (hosts.isEmpty) {
+      // Terminate input loop if is running
+      close()
+    }
+  }
+
 }
 
 
