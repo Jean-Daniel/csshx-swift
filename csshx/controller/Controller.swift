@@ -30,7 +30,7 @@ class Controller {
 
   fileprivate var listener: IOListener? = nil
 
-  init(tab: Terminal.Tab, socket: String, settings: Settings) throws {
+  init(tab: Terminal.Tab?, socket: String, settings: Settings) throws {
     self.tab = tab
     self.socket = socket
     self.settings = settings

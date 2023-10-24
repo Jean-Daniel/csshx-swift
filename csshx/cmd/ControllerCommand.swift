@@ -11,7 +11,7 @@ import ArgumentParser
 extension Csshx {
   struct ControllerCommand: ParsableCommand {
 
-    @Option var windowId: CGWindowID
+    @Option var windowId: CGWindowID?
     @Option var tabIdx: Int
 
     @Option var launchpid: pid_t = 0
@@ -40,14 +40,14 @@ extension Csshx {
       signal(SIGTSTP, SIG_IGN)
       signal(SIGPIPE, SIG_IGN)
 
-      let tab: Terminal.Tab
+      var tab: Terminal.Tab? = nil
 
       // Used in debug mode to launch the controller manually
       if windowId == 0 {
         var st = stat()
         fstat(STDIN_FILENO, &st)
         tab = try Terminal.Tab(tty: st.st_rdev)
-      } else {
+      } else if let windowId {
         tab = try Terminal.Tab(window: windowId, tab: tabIdx)
       }
 
