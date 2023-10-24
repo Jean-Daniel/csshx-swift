@@ -26,6 +26,66 @@ extension CGFloat: ExpressibleByStringArgument {
   }
 }
 
+extension Array<Int>: ExpressibleByStringArgument {
+
+  init?(argument: String) {
+    guard let indices = Self.parse(ranges: argument) else {
+      return nil
+    }
+    self.init(indices)
+  }
+
+  private static func parse(ranges: String) -> IndexSet? {
+    // split on comma, and then parse individual range if they contains '-'
+    if ranges.contains(",") {
+      var result = IndexSet()
+      for range in ranges.split(separator: ",") {
+        guard parse(range: String(range), into: &result) else {
+          return nil
+        }
+      }
+      return result
+    }
+
+    // single range or single value
+    var result = IndexSet()
+    guard parse(range: ranges, into: &result) else {
+      return nil
+    }
+    return result
+  }
+
+  private static let intRange = Regex {
+    Capture(OneOrMore(.digit)) { Int($0)! }
+    "-"
+    Capture(OneOrMore(.digit)) { Int($0)! }
+  }
+
+  // start-end
+  private static func parse(range: String, into: inout IndexSet) -> Bool {
+    // single word -> return change unchanged.
+    if range.wholeMatch(of: OneOrMore(.digit)) != nil {
+      guard let value = Int(range) else {
+        return false
+      }
+      into.insert(value)
+      return true
+    } else if let match = range.wholeMatch(of: Self.intRange) {
+      let start = match.output.1
+      let end = match.output.2
+      guard start < end else {
+        logger.debug("invalid range. start must be less than end: \(range)")
+        return false
+      }
+      into.insert(integersIn: start...end)
+      return true
+    }
+
+    return false
+  }
+}
+
+
 // MARK: CGRect
 
 private let boundsValueRegex = Regex {
@@ -209,7 +269,8 @@ struct Settings {
   var remoteCommand: String? = nil
 
   var login: String?
-  var screen: Int = 0
+  var screens: Array<Int> = []
+
   var space: Int32 = -1
   var debug: Bool = false
   var sessionMax = 256
@@ -289,7 +350,9 @@ extension Settings {
     "rows": .set(\Settings.rows),
 
     "screen_bounds": .set(\Settings.screenBounds),
-    "screen": .set(\Settings.screen),
+    "screen": .set(\Settings.screens),
+    "screens": .set(\Settings.screens),
+
     "space": .set(\Settings.space),
 
     "master_height": .set(\Settings.controllerHeight),

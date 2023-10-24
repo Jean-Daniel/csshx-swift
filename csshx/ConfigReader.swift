@@ -16,7 +16,6 @@ import RegexBuilder
 //   - trying to expand the hostname if this is an hostname template.
 //   - else assume this is an hostname and insert is as is.
 
-
 extension Settings {
 
   // Load settings and create HostList used to resolve target hosts.

@@ -8,37 +8,6 @@
 import Foundation
 import RegexBuilder
 
-private let hostFormat = Regex {
-  Optionally {
-    Regex {
-      Capture(OneOrMore(.any, .reluctant))
-      "@"
-    }
-  }
-  Capture(OneOrMore(.any, .reluctant))
-  Optionally {
-    Regex {
-      ":"
-      Capture {
-        OneOrMore(.any)
-      }
-    }
-  }
-}
-
-extension StringProtocol where Self.SubSequence == Substring {
-  func parseUserHostPort() throws -> (String?, String, String?) {
-    // Formats:
-    //   hostname
-    //   hostname:port
-    //   user@hostname
-    //   user@hostname:port
-    guard let result = wholeMatch(of: hostFormat) else {
-      throw CocoaError(.formatting)
-    }
-    return (result.output.1.flatMap(String.init), String(result.output.2), result.output.3.flatMap(String.init));
-  }
-}
 
 extension Sequence where Element == String {
 

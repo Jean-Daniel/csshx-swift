@@ -13,7 +13,8 @@ import RegexBuilder
 
 struct LayoutOptions: ParsableArguments {
 
-  @Option(help: ArgumentHelp(discussion: """
+  @Option(name: [.customLong("screen"), .customLong("screens")],
+          help: ArgumentHelp(discussion: """
                              Sets the screen(s) on which to display the terminals, if you have
                              multiple monitors. If the argument is passed a number, that screen
                              will be used.
@@ -23,8 +24,14 @@ struct LayoutOptions: ParsableArguments {
                              of windows, such as "L" shapes will probably not work.
 
                              Screens are numbered from 1.
-                             """))
-  var screen: Int?
+                             """), 
+          transform: { str in
+    guard let indices = [Int](argument: str) else {
+      return nil
+    }
+    return indices
+  })
+  var screens: Array<Int>?
 
   @Option(help: "Sets the space (if Spaces is enabled) on which to display the terminals. Defaults to current space")
   var space: Int?
@@ -65,7 +72,7 @@ struct LayoutOptions: ParsableArguments {
   var hostWindowProfile: String?
 
   func override(_ settings: inout Settings) {
-    if let screen { settings.screen = screen }
+    if let screens { settings.screens = screens }
     if let space { settings.space = Int32(space) }
     if let columns { settings.columns = columns }
     if let rows { settings.rows = rows }

@@ -40,7 +40,18 @@ extension Csshx {
       signal(SIGTSTP, SIG_IGN)
       signal(SIGPIPE, SIG_IGN)
 
-      let ctrl = try Controller(tab: try Terminal.Tab(window: windowId, tab: tabIdx), socket: socket, settings: settings)
+      let tab: Terminal.Tab
+
+      // Used in debug mode to launch the controller manually
+      if windowId == 0 {
+        var st = stat()
+        fstat(STDIN_FILENO, &st)
+        tab = try Terminal.Tab(tty: st.st_rdev)
+      } else {
+        tab = try Terminal.Tab(window: windowId, tab: tabIdx)
+      }
+
+      let ctrl = try Controller(tab: tab, socket: socket, settings: settings)
       // Start listening socket
       try ctrl.listen()
 

@@ -48,7 +48,7 @@ extension Terminal {
     }
 
     fileprivate func asNSColor() -> NSColor {
-      return NSColor(srgbRed: red, green: green, blue: blue, alpha: 0)
+      return NSColor(srgbRed: red, green: green, blue: blue, alpha: 1)
     }
   }
 
@@ -80,12 +80,7 @@ extension Terminal {
     }
 
     func tty() -> dev_t {
-      guard let tty = tab.tty else {
-        return 0
-      }
-      var st = stat()
-      guard stat(tty, &st) == 0 else { return 0 }
-      return st.st_rdev
+      return tab.ttydev()
     }
     
     // MARK: Window Management
@@ -166,11 +161,32 @@ extension Terminal {
 
 private class TerminalApplicationDelegate: SBApplicationDelegate {
   func eventDidFail(_ event: UnsafePointer<AppleEvent>, withError error: Error) -> Any? {
-    logger.warning("apple event did failed with error: \(error)")
+    let err = error as NSError
+    logger.warning("apple event did failed with error: \(err)")
+    return nil
   }
 }
 
 extension Terminal.Tab {
+
+  init(tty: dev_t) throws {
+    guard let bridge = TerminalApplication(bundleIdentifier: TerminalBundleId) else {
+      throw ScriptingBridgeError()
+    }
+    bridge.delegate = TerminalApplicationDelegate()
+
+    for w in bridge.windows() {
+      let win = w as! TerminalWindow
+      for t in win.tabs() {
+        let tab = t as! TerminalTab
+        if tab.ttydev() == tty {
+          self.init(tab: tab, window: win, terminal: bridge, tabIdx: try tab.index(), windowId: CGWindowID(win.id()))
+          return
+        }
+      }
+    }
+    throw ScriptingBridgeError()
+  }
 
   init(window: CGWindowID, tab: Int) throws {
     guard let bridge = TerminalApplication(bundleIdentifier: TerminalBundleId) else {
@@ -222,94 +238,21 @@ extension Terminal.Tab {
   }
 }
 
-// MARK: -
-struct Screen {
-  // my ($cur_bounds, $max_bounds);
+extension TerminalTab {
+  func ttydev() -> dev_t {
+    guard let tty = tty else {
+      return 0
+    }
+    var st = stat()
+    guard stat(tty, &st) == 0 else { return 0 }
+    return st.st_rdev
+  }
 
-  /*
-   sub screen_bounds {
-       my ($obj) = @_;
-
-       my ($x,$y,$w,$h);
-       if ($cur_bounds) {
-           return $cur_bounds;
-       } elsif ($config->screen_bounds) {
-           ($x,$y,$w,$h) = @{$config->screen_bounds};
-       } else {
-           my $scr = $config->screen;
-           ($x,$y,$w,$h) = @{physical_screen_bounds($scr)};
-       }
-       $max_bounds = [ $x, $y, $w, $h ];
-       return $cur_bounds = [ $x, $y, $w, $h ];
-   }
-
-   sub physical_screen_bounds {
-       my ($scr) = @_;
-
-       $scr ||= 1;
-       $scr =~ /^(\d+)(?:-(\d+))?$/ || die "Screen must be a number (e.g. 1) or a range (e.g. 1-2)";
-       my ($s1, $s2) = ($1,$2);
-
-       my $displays =  NSScreen->screens()->count;
-       die "No such screen [$s1], screen must be $displays or less"
-           if $s1 > $displays;
-
-       my $frame1 = NSScreen->screens->objectAtIndex_($s1-1)->visibleFrame;
-       my $scr1   = [ObjCStruct::NSRect->unpack($frame1)];
-
-       if (defined $s2) {
-           # If it's a screen range - try to find a rectangle that
-           # fits neatly across the screens
-
-           die "No such screen [$s2], screen must be $displays or less"
-               if $s2 > $displays;
-
-           my $frame2 = NSScreen->screens->objectAtIndex_($s2-1)->visibleFrame;
-           my $scr2   = [ObjCStruct::NSRect->unpack($frame2)];
-
-           my $out  = [];
-
-           if ($scr2->[0] >= ($scr1->[0]+$scr1->[2])) {
-               # Left of scr2, is to right of right of scr1
-               $out->[0] = $scr1->[0];
-               $out->[2] = ($scr2->[0] + $scr2->[2]) - $scr1->[0];
-           } elsif ($scr1->[0] >= ($scr2->[0]+$scr2->[2])) {
-               # Left of scr1, is to right of right of scr2
-               $out->[0] = $scr2->[0];
-               $out->[2] = ($scr1->[0] + $scr1->[2]) - $scr2->[0];
-           } else {
-               $out->[0] = max($scr1->[0], $scr2->[0]);
-               $out->[2] = min($scr1->[2], $scr2->[2]);
-           }
-
-           if ($scr2->[1] >= ($scr1->[1]+$scr1->[3])) {
-               # Bottom of scr2, is above top of scr1
-               $out->[1] = $scr1->[1];
-               $out->[3] = ($scr2->[1] + $scr2->[3]) - $scr1->[1];
-           } elsif ($scr1->[1] >= ($scr2->[1]+$scr2->[3])) {
-               # Bottom of scr1, is above top of scr2
-               $out->[1] = $scr2->[1];
-               $out->[3] = ($scr1->[1] + $scr1->[3]) - $scr2->[1];
-           } else {
-               $out->[1] = max($scr1->[1], $scr2->[1]);
-               $out->[3] = min($scr1->[3], $scr2->[3]);
-           }
-
-           return $out;
-
-       } else {
-
-           return $scr1;
-
-       }
-   }
-
-   sub reset_bounds {
-       $cur_bounds = [ @$max_bounds ];
-   }
-
-   sub max_physical_bounds {
-       $cur_bounds = physical_screen_bounds($config->screen);
-   }
-   */
+  func index() throws -> Int {
+    guard let specifier = qualifiedSpecifier(),
+          let tabIdx = specifier.forKeyword(kSeldProperty)?.int32Value else {
+      throw ScriptingBridgeError()
+    }
+    return Int(tabIdx)
+  }
 }
