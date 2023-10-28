@@ -245,6 +245,11 @@ struct EscapeSequence: ExpressibleByStringArgument {
 // MARK: - Settings
 struct Settings {
 
+  // Windows Layout
+  var space: Int32 = -1
+
+  var layout = WindowLayoutManager.Config()
+
   var actionKey: EscapeSequence = EscapeSequence(argument: "\\001")!
 
   var selectedForeground: Terminal.Color?
@@ -259,19 +264,11 @@ struct Settings {
   var resizingForeground: Terminal.Color?
   var resizingBackground: Terminal.Color? = Terminal.Color(red: 17990, green: 35209, blue: 53456)
 
-  var controllerHeight: CGFloat = 87 // Pixels ?
-  var screenBounds: CGRect? = nil
-
-  var rows: Int = 0
-  var columns: Int = 0
-
   var sshArgs: String? = nil
   var remoteCommand: String? = nil
 
   var login: String?
-  var screens: Array<Int> = []
 
-  var space: Int32 = -1
   var debug: Bool = false
   var sessionMax = 256
 
@@ -344,19 +341,19 @@ extension Settings {
     "interleave": .set(\Settings.interleave),
 
     // Screen Layout
-    "tile_x": .set(\Settings.columns),
-    "columns": .set(\Settings.columns),
-    "tile_y": .set(\Settings.rows),
-    "rows": .set(\Settings.rows),
-
-    "screen_bounds": .set(\Settings.screenBounds),
-    "screen": .set(\Settings.screens),
-    "screens": .set(\Settings.screens),
-
     "space": .set(\Settings.space),
 
-    "master_height": .set(\Settings.controllerHeight),
-    "controller_height": .set(\Settings.controllerHeight),
+    "tile_x": .set(\Settings.layout.columns),
+    "columns": .set(\Settings.layout.columns),
+    "tile_y": .set(\Settings.layout.rows),
+    "rows": .set(\Settings.layout.rows),
+
+    "screen": .set(\Settings.layout.screens),
+    "screens": .set(\Settings.layout.screens),
+    "screen_bounds": .set(\Settings.layout.screenBounds),
+
+    "master_height": .set(\Settings.layout.controllerHeight),
+    "controller_height": .set(\Settings.layout.controllerHeight),
   ]
 }
 

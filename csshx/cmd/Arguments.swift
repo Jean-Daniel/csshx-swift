@@ -13,6 +13,14 @@ import RegexBuilder
 
 struct LayoutOptions: ParsableArguments {
 
+  @Option(name: [.customShort("y"), .customLong("rows"), .customLong("tile_y")],
+          help: "The number of rows to use when tiling windows. Ignored if tile_x is specified..")
+  var rows: Int?
+  
+  @Option(name: [.customShort("x"), .customLong("columns"), .customLong("tile_x")],
+          help: "The number of columns to use when tiling windows.")
+  var columns: Int?
+
   @Option(name: [.customLong("screen"), .customLong("screens")],
           help: ArgumentHelp(discussion: """
                              Sets the screen(s) on which to display the terminals, if you have
@@ -35,14 +43,6 @@ struct LayoutOptions: ParsableArguments {
 
   @Option(help: "Sets the space (if Spaces is enabled) on which to display the terminals. Defaults to current space")
   var space: Int?
-
-  @Option(name: [.customShort("x"), .customLong("columns"), .customLong("tile_x")],
-          help: "The number of columns to use when tiling windows.")
-  var columns: Int?
-
-  @Option(name: [.customShort("y"), .customLong("rows"), .customLong("tile_y")],
-          help: "The number of rows to use when tiling windows. Ignored if tile_x is specified..")
-  var rows: Int?
 
   @Flag(help: "Sort the host windows, by hostname, before opening them.")
   var sortHosts = false
@@ -72,10 +72,11 @@ struct LayoutOptions: ParsableArguments {
   var hostWindowProfile: String?
 
   func override(_ settings: inout Settings) {
-    if let screens { settings.screens = screens }
     if let space { settings.space = Int32(space) }
-    if let columns { settings.columns = columns }
-    if let rows { settings.rows = rows }
+
+    if let screens { settings.layout.screens = screens }
+    if let columns { settings.layout.columns = columns }
+    if let rows { settings.layout.rows = rows }
     settings.sortHosts = settings.sortHosts || sortHosts
     if let interleave { settings.interleave = interleave }
     if let controllerWindowProfile { settings.controllerWindowProfile = controllerWindowProfile }

@@ -36,9 +36,7 @@ class Controller {
     self.settings = settings
     buffer.reserveCapacity(256)
 
-    windowManager = try WindowLayoutManager(screens: settings.screens, 
-                                            bounds: settings.screenBounds,
-                                            controllerHeight: settings.controllerHeight)
+    windowManager = WindowLayoutManager(config: settings.layout)
     layoutControllerWindow()
   }
 
@@ -150,10 +148,9 @@ class Controller {
 
   // MARK: - Layout
   fileprivate func layout() {
-    // Update controller window
-    layoutControllerWindow()
-
-    // Update other windows
+    guard let tab else { return }
+    let hosts = hosts.compactMap { $0.tab }
+    windowManager.layout(controller: tab, hosts: hosts)
   }
 
   private func layoutControllerWindow() {
@@ -167,7 +164,7 @@ class Controller {
       tab.setTextColor(color: color)
     }
 
-    windowManager.layout(controller: tab)
+    windowManager.layout(controller: tab, hosts: [])
     tab.window.frontmost = true
   }
 }
@@ -216,7 +213,6 @@ extension Controller {
 
   func ready() throws {
     if inputMode == .starting {
-      // TODO: layout hosts window
       layout()
       try setInputMode(.input)
     }
@@ -229,6 +225,11 @@ extension Controller {
         // TODO: print warning ?
       }
     }
+    // Get window size ratio for new window and save it into the layout manager
+    // It is more accurate to take it from a new window than trying to infer it from
+    // the tab profile rows/columns count, as the row/columns size ratio depends the used font.
+    windowManager.setDefaultWindowRatio(from: tab)
+
     let tty = tab.tty()
     guard tty > 0 else {
       throw ScriptingBridgeError()

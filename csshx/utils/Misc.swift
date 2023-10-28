@@ -80,3 +80,31 @@ struct stty {
   }
 }
 
+func getBestLayout(for ratio: Double, hosts: Int, on screen: CGRect) -> (Int, Int) {
+  var bestRowCount = 0
+  var bestColumnCount = 0
+  var bestRatioDelta = Double.infinity
+
+  func testRatio(rows: Int, columns: Int) {
+    let winRatio = (screen.width / Double(columns)) / (screen.height / Double(rows))
+    let delta = ratio > winRatio ? ratio / winRatio : winRatio / ratio
+    if delta < bestRatioDelta {
+      bestRatioDelta = delta
+      bestRowCount = rows
+      bestColumnCount = columns
+    }
+  }
+
+  for rows in 1...Int(ceil(Float(hosts).squareRoot())) {
+    // For each rows x columns
+    let columns = Int(ceil(Float(hosts) / Float(rows)))
+    // Test both horizontal and vertical layout
+    testRatio(rows: rows, columns: columns)
+    if rows != columns {
+      testRatio(rows: columns, columns: rows)
+    }
+  }
+
+  return (bestRowCount, bestColumnCount)
+}
+

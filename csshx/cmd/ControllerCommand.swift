@@ -12,7 +12,7 @@ extension Csshx {
   struct ControllerCommand: ParsableCommand {
 
     @Option var windowId: CGWindowID?
-    @Option var tabIdx: Int
+    @Option var tabIdx: Int = 1
 
     @Option var launchpid: pid_t = 0
 

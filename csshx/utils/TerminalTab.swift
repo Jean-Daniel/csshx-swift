@@ -84,8 +84,8 @@ extension Terminal {
     }
     
     // MARK: Window Management
-    func bounds() -> CGRect {
-      return window.bounds
+    func frame() -> CGRect {
+      return window.frame
     }
 
     func move(x dx: CGFloat, y dy: CGFloat) {
@@ -175,17 +175,11 @@ extension Terminal.Tab {
     }
     bridge.delegate = TerminalApplicationDelegate()
 
-    for w in bridge.windows() {
-      let win = w as! TerminalWindow
-      for t in win.tabs() {
-        let tab = t as! TerminalTab
-        if tab.ttydev() == tty {
-          self.init(tab: tab, window: win, terminal: bridge, tabIdx: try tab.index(), windowId: CGWindowID(win.id()))
-          return
-        }
-      }
+    guard let tab = bridge.tab(withTTY: tty) else {
+      throw ScriptingBridgeError()
     }
-    throw ScriptingBridgeError()
+
+    try self.init(terminal: bridge, tab: tab)
   }
 
   init(window: CGWindowID, tab: Int) throws {
@@ -211,6 +205,11 @@ extension Terminal.Tab {
       throw ScriptingBridgeError()
     }
 
+    return try Terminal.Tab.init(terminal: bridge, tab: tab);
+  }
+
+  private init(terminal: TerminalApplication, tab: TerminalTab) throws {
+
     // Get the window IDs from the Apple Event itself
     // The Tab Specifier looks like this:
     // 'obj '{
@@ -218,6 +217,7 @@ extension Terminal.Tab {
     //      'want':'cwin', 'form':'ID  ', 'seld':23600, 'from':[0x0,f0ef0e "Terminal"]
     //    }
     //  }
+    // FIXME: check the 'form' of each specifier
     guard let specifier = tab.qualifiedSpecifier(),
           let tabIdx = specifier.forKeyword(kSeldProperty)?.int32Value,
           // Get the 'from' property which is a Window object specifier
@@ -225,17 +225,18 @@ extension Terminal.Tab {
           // Get the specifier key which is the window 'ID  '
           let windowId = windowSpec.forKeyword(kSeldProperty),
           // And finally, create a TabWindow representing the tab's window.
-          let window = bridge.windows().object(withID: windowId.int32Value) as? TerminalWindow
+          let window = terminal.windows().object(withID: windowId.int32Value) as? TerminalWindow
     else {
       throw ScriptingBridgeError()
     }
 
-    return Terminal.Tab(tab: tab, 
-                        window: window,
-                        terminal: bridge,
-                        tabIdx: Int(tabIdx - 1), // convert to 0 based index, as it will be converted back by object(at:)
-                        windowId: CGWindowID(windowId.int32Value))
+    self.init(tab: tab,
+              window: window,
+              terminal: terminal,
+              tabIdx: Int(tabIdx - 1), // convert to 0 based index, as it will be converted back by object(at:)
+              windowId: CGWindowID(windowId.int32Value))
   }
+
 }
 
 extension TerminalTab {

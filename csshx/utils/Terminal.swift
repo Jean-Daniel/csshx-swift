@@ -7,7 +7,7 @@
 
 import Foundation
 
-let TerminalBundleId = "com.apple.terminal"
+let TerminalBundleId = "com.apple.Terminal"
 
 struct Terminal {
 
