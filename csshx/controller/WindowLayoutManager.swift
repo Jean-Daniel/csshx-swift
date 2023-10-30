@@ -133,7 +133,8 @@ struct WindowLayoutManager {
       host.window.visible = true
       host.window.miniaturized = false
       host.window.frontmost = true
-      host.window.frame = CGRect(x: screen.minX + x, y: screen.minY + y, width: width, height: height)
+      // Layout from top to bottom
+      host.window.frame = CGRect(x: screen.minX + x, y: screen.maxY - height - y, width: width, height: height)
     }
   }
 }
