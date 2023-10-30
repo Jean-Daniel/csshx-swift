@@ -8,7 +8,6 @@
 import Foundation
 import RegexBuilder
 
-
 extension Sequence where Element == String {
 
   @discardableResult
@@ -42,9 +41,17 @@ extension POSIXError {
   }
 }
 
+func fwrite(str: String) {
+  var data = str
+  let _ = data.withUTF8 { ptr in
+    fwrite(ptr.baseAddress, ptr.count, 1, stdout)
+    fflush(stdout)
+  }
+}
+
 struct stty {
 
-  static func clear() { print("\u{001b}[1J\u{001b}[0;0H") }
+  static func clear() { fwrite(str: "\u{001b}[1J\u{001b}[0;0H") }
 
   @discardableResult
   static func set(attr: termios) throws -> termios {

@@ -62,22 +62,31 @@ class Controller {
       }
 
       // No mode change, exit the loop
-      if (id != inputMode.id) { break }
+      if (id == inputMode.id) { break }
     }
   }
 
   func send(bytes: some ContiguousBytes) {
     let data = bytes.withUnsafeBytes(DispatchData.init(bytes:))
     for host in hosts {
-      // Skip disabled hosts, and not connected host
-      guard host.enabled, let connection = host.connection else { continue }
+      send(bytes: data, to: host)
+    }
+  }
 
-      connection.write(data) { [self] error in
-        // on error -> remove host from the host list
-        if error != nil {
-          logger.warning("error while forwarding data to host: \(host.host.hostname)")
-          terminate(host: host)
-        }
+  func send(bytes: some ContiguousBytes, to host: HostWindow) {
+    let data = bytes.withUnsafeBytes(DispatchData.init(bytes:))
+    send(bytes: data, to: host)
+  }
+
+  private func send(bytes: DispatchData, to host: HostWindow) {
+    // Skip disabled hosts, and not connected host
+    guard host.enabled, let connection = host.connection else { return }
+
+    connection.write(bytes) { [self] error in
+      // on error -> remove host from the host list
+      if error != nil {
+        logger.warning("error while forwarding data to host: \(host.host.hostname)")
+        terminate(host: host)
       }
     }
   }
@@ -87,7 +96,8 @@ class Controller {
     guard stdin != nil else { return }
 
     stty.clear()
-    print(inputMode.prompt(self))
+    let prompt = inputMode.prompt(self)
+    fwrite(str: prompt)
   }
 
   func setInputMode(_ mode: InputMode) throws {
@@ -147,10 +157,12 @@ class Controller {
   }
 
   // MARK: - Layout
-  fileprivate func layout() {
+  func layout() {
     guard let tab else { return }
     let hosts = hosts.compactMap { $0.tab }
     windowManager.layout(controller: tab, hosts: hosts)
+    // Always make sure the controller window is frontmost window
+    tab.window.frontmost = true
   }
 
   private func layoutControllerWindow() {
@@ -236,7 +248,7 @@ extension Controller {
     }
     logger.info("[\(target.hostname)] opening window: \(tab.windowId)/\(tab.tabIdx) (tty: \(tty))")
 
-    let host = HostWindow(tab: tab, host: target, tty: tty)
+    let host = HostWindow(tab: tab, host: target, tty: tty, config: settings.hostWindow)
     host.whenDone = done
     hosts.append(host)
 

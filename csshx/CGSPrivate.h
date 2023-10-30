@@ -25,37 +25,37 @@
 extern "C" {
 #endif
 
-typedef int CGSConnection;
+typedef void* CGSConnectionID;
 typedef int CGSWorkspace;
 typedef int CGSValue;
 
 #pragma mark Listing Windows
 /* Get the default connection for the current process. */
-extern CGSConnection _CGSDefaultConnection(void);
-static inline CGSConnection CGSDefaultConnection() { return _CGSDefaultConnection(); }
+extern CGSConnectionID _CGSDefaultConnection(void);
+static inline CGSConnectionID CGSDefaultConnection() { return _CGSDefaultConnection(); }
 // Disable/Enable Screen Updates
-extern CGError CGSDisableUpdate(CGSConnection cid);
-extern CGError CGSReenableUpdate(CGSConnection cid);
+extern CGError CGSDisableUpdate(CGSConnectionID cid);
+extern CGError CGSReenableUpdate(CGSConnectionID cid);
 
 #pragma mark Listing Windows
 
 // Get window counts and lists.
-extern CGError CGSGetWindowCount(const CGSConnection cid, CGSConnection targetCID, int* outCount);
-extern CGError CGSGetWindowList(const CGSConnection cid, CGSConnection targetCID, int count, int* list, int* outCount);
+extern CGError CGSGetWindowCount(const CGSConnectionID cid, CGSConnectionID targetCID, int* outCount);
+extern CGError CGSGetWindowList(const CGSConnectionID cid, CGSConnectionID targetCID, int count, int* list, int* outCount);
 
 // Get on-screen window counts and lists.
-extern CGError CGSGetOnScreenWindowCount(const CGSConnection cid, CGSConnection targetCID, int* outCount);
-extern CGError CGSGetOnScreenWindowList(const CGSConnection cid, CGSConnection targetCID, int count, int* list, int* outCount);
+extern CGError CGSGetOnScreenWindowCount(const CGSConnectionID cid, CGSConnectionID targetCID, int* outCount);
+extern CGError CGSGetOnScreenWindowList(const CGSConnectionID cid, CGSConnectionID targetCID, int count, int* list, int* outCount);
 
 // Per-workspace window counts and lists.
-extern CGError CGSGetWorkspaceWindowCount(const CGSConnection cid, CGSWorkspace workspaceNumber, int *outCount);
-extern CGError CGSGetWorkspaceWindowList(const CGSConnection cid, CGSWorkspace workspaceNumber, int count, int* list, int* outCount);
+extern CGError CGSGetWorkspaceWindowCount(const CGSConnectionID cid, CGSWorkspace workspaceNumber, int *outCount);
+extern CGError CGSGetWorkspaceWindowList(const CGSConnectionID cid, CGSWorkspace workspaceNumber, int count, int* list, int* outCount);
 
 #pragma mark Window Manipulation
 
 // Window Level
-extern CGError CGSGetWindowLevel(const CGSConnection cid, CGWindowID wid, CGWindowLevel *level);
-extern CGError CGSSetWindowLevel(const CGSConnection cid, CGWindowID wid, CGWindowLevel level);
+extern CGError CGSGetWindowLevel(const CGSConnectionID cid, CGWindowID wid, CGWindowLevel *level);
+extern CGError CGSSetWindowLevel(const CGSConnectionID cid, CGWindowID wid, CGWindowLevel level);
 
 // Window ordering
 typedef enum _CGSWindowOrderingMode {
@@ -64,43 +64,43 @@ typedef enum _CGSWindowOrderingMode {
   kCGSOrderOut                  =  0  // Window is removed from the on-screen window list.
 } CGSWindowOrderingMode;
 
-extern CGError CGSOrderWindow(const CGSConnection cid, const CGWindowID wid, CGSWindowOrderingMode place, CGWindowID relativeToWindowID /* can be NULL */);
-extern CGError CGSWindowIsOrderedIn(const CGSConnection cid, const CGWindowID wid, Boolean *result);
+extern CGError CGSOrderWindow(const CGSConnectionID cid, const CGWindowID wid, CGSWindowOrderingMode place, CGWindowID relativeToWindowID /* can be NULL */);
+extern CGError CGSWindowIsOrderedIn(const CGSConnectionID cid, const CGWindowID wid, Boolean *result);
 
-extern CGError CGSUncoverWindow(const CGSConnection cid, const CGWindowID wid);
-extern CGError CGSFlushWindow(const CGSConnection cid, const CGWindowID wid, int unknown /* 0 works */ );
+extern CGError CGSUncoverWindow(const CGSConnectionID cid, const CGWindowID wid);
+extern CGError CGSFlushWindow(const CGSConnectionID cid, const CGWindowID wid, int unknown /* 0 works */ );
 
 // Position
-extern CGError CGSGetWindowBounds(CGSConnection cid, CGWindowID wid, CGRect *outBounds);
-extern CGError CGSGetScreenRectForWindow(const CGSConnection cid, CGWindowID wid, CGRect *outRect);
-extern CGError CGSMoveWindow(const CGSConnection cid, const CGWindowID wid, CGPoint *point);
-extern CGError CGSSetWindowTransform(const CGSConnection cid, const CGWindowID wid, CGAffineTransform transform);
-extern CGError CGSGetWindowTransform(const CGSConnection cid, const CGWindowID wid, CGAffineTransform * outTransform);
-extern CGError CGSSetWindowTransforms(const CGSConnection cid, CGWindowID *wids, CGAffineTransform *transform, int n);
+extern CGError CGSGetWindowBounds(CGSConnectionID cid, CGWindowID wid, CGRect *outBounds);
+extern CGError CGSGetScreenRectForWindow(const CGSConnectionID cid, CGWindowID wid, CGRect *outRect);
+extern CGError CGSMoveWindow(const CGSConnectionID cid, const CGWindowID wid, CGPoint *point);
+extern CGError CGSSetWindowTransform(const CGSConnectionID cid, const CGWindowID wid, CGAffineTransform transform);
+extern CGError CGSGetWindowTransform(const CGSConnectionID cid, const CGWindowID wid, CGAffineTransform * outTransform);
+extern CGError CGSSetWindowTransforms(const CGSConnectionID cid, CGWindowID *wids, CGAffineTransform *transform, int n);
 
 // Alpha
-extern CGError CGSSetWindowAlpha(const CGSConnection cid, const CGWindowID wid, float alpha);
-extern CGError CGSSetWindowListAlpha(const CGSConnection cid, CGWindowID *wids, int count, float alpha);
-extern CGError CGSGetWindowAlpha(const CGSConnection cid, const CGWindowID wid, float* alpha);
+extern CGError CGSSetWindowAlpha(const CGSConnectionID cid, const CGWindowID wid, float alpha);
+extern CGError CGSSetWindowListAlpha(const CGSConnectionID cid, CGWindowID *wids, int count, float alpha);
+extern CGError CGSGetWindowAlpha(const CGSConnectionID cid, const CGWindowID wid, float* alpha);
 
 // Brightness
-extern CGError CGSSetWindowListBrightness(const CGSConnection cid, CGWindowID *wids, float *brightness, int count);
+extern CGError CGSSetWindowListBrightness(const CGSConnectionID cid, CGWindowID *wids, float *brightness, int count);
 
 // Workspace
-extern CGError CGSMoveWorkspaceWindows(const CGSConnection connection, CGSWorkspace toWorkspace, CGSWorkspace fromWorkspace);
-extern CGError CGSMoveWorkspaceWindowList(const CGSConnection connection, CGWindowID *wids, int count, CGSWorkspace toWorkspace);
+extern CGError CGSMoveWorkspaceWindows(const CGSConnectionID connection, CGSWorkspace toWorkspace, CGSWorkspace fromWorkspace);
+extern CGError CGSMoveWorkspaceWindowList(const CGSConnectionID connection, CGWindowID *wids, int count, CGSWorkspace toWorkspace);
 
 // Shadow
-extern CGError CGSSetWindowShadowAndRimParameters(const CGSConnection cid, CGWindowID wid, float standardDeviation, float density, int offsetX, int offsetY, unsigned int flags);
-extern CGError CGSGetWindowShadowAndRimParameters(const CGSConnection cid, CGWindowID wid, float* standardDeviation, float* density, int *offsetX, int *offsetY, unsigned int *flags);
+extern CGError CGSSetWindowShadowAndRimParameters(const CGSConnectionID cid, CGWindowID wid, float standardDeviation, float density, int offsetX, int offsetY, unsigned int flags);
+extern CGError CGSGetWindowShadowAndRimParameters(const CGSConnectionID cid, CGWindowID wid, float* standardDeviation, float* density, int *offsetX, int *offsetY, unsigned int *flags);
 
 // Properties
-extern CGError CGSGetWindowProperty(const CGSConnection cid, CGWindowID wid, CGSValue key, CGSValue *outValue);
-extern CGError CGSSetWindowProperty(const CGSConnection cid, CGWindowID wid, CGSValue key, CGSValue *outValue);
+extern CGError CGSGetWindowProperty(const CGSConnectionID cid, CGWindowID wid, CGSValue key, CGSValue *outValue);
+extern CGError CGSSetWindowProperty(const CGSConnectionID cid, CGWindowID wid, CGSValue key, CGSValue *outValue);
 
 // Owner
-extern CGError CGSGetWindowOwner(const CGSConnection cid, const CGWindowID wid, CGSConnection *ownerCid);
-extern CGError CGSConnectionGetPID(const CGSConnection cid, pid_t *pid, const CGSConnection ownerCid);
+extern CGError CGSGetWindowOwner(const CGSConnectionID cid, const CGWindowID wid, CGSConnectionID *ownerCid);
+extern CGError CGSConnectionGetPID(const CGSConnectionID cid, pid_t *pid, const CGSConnectionID ownerCid);
 
 #pragma mark Window Tags
 
@@ -114,11 +114,11 @@ typedef enum {
 
 // thirtyTwo must = 32 for some reason.
 // tags is a pointer to an array of ints (size 2?). First entry holds window tags.
-extern CGError CGSGetWindowTags(const CGSConnection cid, const CGWindowID wid, CGSWindowTag *tags, int thirtyTwo);
-extern CGError CGSSetWindowTags(const CGSConnection cid, const CGWindowID wid, CGSWindowTag *tags, int thirtyTwo);
-extern CGError CGSClearWindowTags(const CGSConnection cid, const CGWindowID wid, CGSWindowTag *tags, int thirtyTwo);
-extern CGError CGSGetWindowEventMask(const CGSConnection cid, const CGWindowID wid, uint32_t *mask);
-extern CGError CGSSetWindowEventMask(const CGSConnection cid, const CGWindowID wid, uint32_t mask);
+extern CGError CGSGetWindowTags(const CGSConnectionID cid, const CGWindowID wid, CGSWindowTag *tags, int thirtyTwo);
+extern CGError CGSSetWindowTags(const CGSConnectionID cid, const CGWindowID wid, CGSWindowTag *tags, int thirtyTwo);
+extern CGError CGSClearWindowTags(const CGSConnectionID cid, const CGWindowID wid, CGSWindowTag *tags, int thirtyTwo);
+extern CGError CGSGetWindowEventMask(const CGSConnectionID cid, const CGWindowID wid, uint32_t *mask);
+extern CGError CGSSetWindowEventMask(const CGSConnectionID cid, const CGWindowID wid, uint32_t mask);
 
 # pragma mark Window Warping
 
@@ -127,16 +127,16 @@ typedef struct {
   CGPoint global;
 } CGPointWarp;
 
-extern CGError CGSSetWindowWarp(const CGSConnection cid, const CGWindowID wid, int w, int h, CGPointWarp mesh[h][w]);
+extern CGError CGSSetWindowWarp(const CGSConnectionID cid, const CGWindowID wid, int w, int h, CGPointWarp mesh[h][w]);
 
 # pragma mark Window Core Image Filters
 
 typedef void *CGSWindowFilterRef;
-extern CGError CGSNewCIFilterByName(CGSConnection cid, CFStringRef filterName, CGSWindowFilterRef *outFilter);
-extern CGError CGSAddWindowFilter(CGSConnection cid, CGWindowID wid, CGSWindowFilterRef filter, int flags);
-extern CGError CGSRemoveWindowFilter(CGSConnection cid, CGWindowID wid, CGSWindowFilterRef filter);
-extern CGError CGSReleaseCIFilter(CGSConnection cid, CGSWindowFilterRef filter);
-extern CGError CGSSetCIFilterValuesFromDictionary(CGSConnection cid, CGSWindowFilterRef filter, CFDictionaryRef filterValues);
+extern CGError CGSNewCIFilterByName(CGSConnectionID cid, CFStringRef filterName, CGSWindowFilterRef *outFilter);
+extern CGError CGSAddWindowFilter(CGSConnectionID cid, CGWindowID wid, CGSWindowFilterRef filter, int flags);
+extern CGError CGSRemoveWindowFilter(CGSConnectionID cid, CGWindowID wid, CGSWindowFilterRef filter);
+extern CGError CGSReleaseCIFilter(CGSConnectionID cid, CGSWindowFilterRef filter);
+extern CGError CGSSetCIFilterValuesFromDictionary(CGSConnectionID cid, CGSWindowFilterRef filter, CFDictionaryRef filterValues);
 
 #pragma mark Transitions
 
@@ -181,16 +181,16 @@ typedef struct {
   float *backColour;  /* Null for black otherwise pointer to 3 float array with RGB value */
 } CGSTransitionSpec;
 
-extern CGError CGSNewTransition(const CGSConnection cid, const CGSTransitionSpec* spec, int *pTransitionHandle);
-extern CGError CGSInvokeTransition(const CGSConnection cid, int transitionHandle, float duration);
-extern CGError CGSReleaseTransition(const CGSConnection cid, int transitionHandle);
+extern CGError CGSNewTransition(const CGSConnectionID cid, const CGSTransitionSpec* spec, int *pTransitionHandle);
+extern CGError CGSInvokeTransition(const CGSConnectionID cid, int transitionHandle, float duration);
+extern CGError CGSReleaseTransition(const CGSConnectionID cid, int transitionHandle);
 
 #pragma mark Workspaces
 
-extern CGError CGSGetWorkspace(const CGSConnection cid, CGSWorkspace *workspace);
-extern CGError CGSGetWindowWorkspace(const CGSConnection cid, const CGWindowID wid, CGSWorkspace *workspace);
-extern CGError CGSSetWorkspace(const CGSConnection cid, CGSWorkspace workspace);
-extern CGError CGSSetWorkspaceWithTransition(const CGSConnection cid, CGSWorkspace workspace, CGSTransitionType transition, CGSTransitionOption subtype, float time);
+extern CGError CGSGetWorkspace(const CGSConnectionID cid, CGSWorkspace *workspace);
+extern CGError CGSGetWindowWorkspace(const CGSConnectionID cid, const CGWindowID wid, CGSWorkspace *workspace);
+extern CGError CGSSetWorkspace(const CGSConnectionID cid, CGSWorkspace workspace);
+extern CGError CGSSetWorkspaceWithTransition(const CGSConnectionID cid, CGSWorkspace workspace, CGSTransitionType transition, CGSTransitionOption subtype, float time);
 
 typedef enum {
   CGSScreenResolutionChangedEvent = 100,
@@ -239,9 +239,9 @@ typedef void (*CGConnectionNotifyProc)(int data1, int data2, int data3, void* us
 
 // For spaces notifications: CGSRegisterConnectionNotifyProc(_CGSDefaultConnection(), spacesCallback, 1401, (void*)userInfo);
 
-extern CGError CGSRegisterConnectionNotifyProc(const CGSConnection cid, CGConnectionNotifyProc function, CGSConnectionNotifyEvent event, void* userParameter);
+extern CGError CGSRegisterConnectionNotifyProc(const CGSConnectionID cid, CGConnectionNotifyProc function, CGSConnectionNotifyEvent event, void* userParameter);
 
-extern CGError CGSRemoveConnectionNotifyProc(const CGSConnection cid, CGConnectionNotifyProc function, CGSConnectionNotifyEvent event, void* userParameter);
+extern CGError CGSRemoveConnectionNotifyProc(const CGSConnectionID cid, CGConnectionNotifyProc function, CGSConnectionNotifyEvent event, void* userParameter);
 
 # pragma mark Miscellaneous
 
@@ -252,9 +252,9 @@ extern CGError CGSNewEmptyRegion(CGSRegionRef *outRegion);
 extern CGError CGSReleaseRegion(CGSRegionRef region);
 
 // Creating Windows
-extern CGError CGSNewWindowWithOpaqueShape(CGSConnection cid, int always2, float x, float y, CGSRegionRef shape, CGSRegionRef opaqueShape, int unknown1, void *unknownPtr, int always32, CGWindowID *outWID);
-extern CGError CGSReleaseWindow(CGSConnection cid, CGWindowID wid);
-extern CGContextRef CGWindowContextCreate(CGSConnection cid, CGWindowID wid, void *unknown);
+extern CGError CGSNewWindowWithOpaqueShape(CGSConnectionID cid, int always2, float x, float y, CGSRegionRef shape, CGSRegionRef opaqueShape, int unknown1, void *unknownPtr, int always32, CGWindowID *outWID);
+extern CGError CGSReleaseWindow(CGSConnectionID cid, CGWindowID wid);
+extern CGContextRef CGWindowContextCreate(CGSConnectionID cid, CGWindowID wid, void *unknown);
 
 // Values
 extern int CGSIntegerValue(CGSValue intVal);
@@ -288,7 +288,7 @@ extern void CGSSetDebugOptions(CGSDebugOptions options);
 //CGSIntersectRegionWithRect
 //CGSSetWindowTransformsAtPlacement
 //CGSSetWindowListGlobalClipShape
-//extern CGError CGSWindowAddRectToDirtyShape(const CGSConnection cid, const CGSWindow wid, CGRect *rect);
+//extern CGError CGSWindowAddRectToDirtyShape(const CGSConnectionID cid, const CGSWindow wid, CGRect *rect);
 
 #ifdef __cplusplus
 }

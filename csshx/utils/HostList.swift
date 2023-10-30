@@ -15,6 +15,19 @@ struct Target: Equatable {
   let hostname: String // may be an host template.
   let port: UInt16?
   let command: String?
+
+  var connectionString: String {
+    var cnt = hostname
+    if let user {
+      cnt.insert("@", at: cnt.startIndex)
+      cnt.insert(contentsOf: user, at: cnt.startIndex)
+    }
+    if let port {
+      cnt.append(":")
+      cnt.append(String(port))
+    }
+    return cnt
+  }
 }
 
 struct HostList {

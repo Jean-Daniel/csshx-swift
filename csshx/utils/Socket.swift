@@ -54,7 +54,7 @@ class IOListener {
           handler(Result.success(client_fd))
         } catch {
           Darwin.close(client_fd)
-          print("client connection setup failed with error: \(error)")
+          logger.warning("client connection setup failed with error: \(error)")
         }
       }
     }

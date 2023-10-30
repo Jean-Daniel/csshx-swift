@@ -7,6 +7,7 @@
 
 import Foundation
 import RegexBuilder
+import System
 
 // MARK: - Input Modes
 struct InputMode: Equatable {
@@ -28,6 +29,10 @@ struct InputMode: Equatable {
     self.parseInput = parseInput
   }
 
+  static func beep() {
+    fwrite(str: "\u{007}")
+  }
+
   static func == (lhs: InputMode, rhs: InputMode) -> Bool {
     lhs.id == rhs.id
   }
@@ -41,7 +46,7 @@ let csiCursorCode = Regex {
 
 extension InputMode {
   static let starting: InputMode = InputMode { ctrl in
-    "Starting hosts: \(ctrl.hosts.count { $0.connection != nil } )/\(ctrl.hosts.count)…"
+    "Starting hosts: \(ctrl.hosts.count { $0.connection != nil } )/\(ctrl.hosts.count)…\r\n"
   } onEnable: { ctrl in
     // noop
   } parseInput: { ctrl, data in
@@ -59,7 +64,10 @@ extension InputMode {
     // In input mode, data is always fully consummed.
     let action = ctrl.settings.actionKey
     // Convert CSI to SS3 cursor codes
-    // "".replacing(csiCursorCode, with: { "\\033O\($0.1)" })
+    // \e[(A-D) -> \eO(A-D)
+    //    if data.count >= 3 && data.starts(with: [ 27, 91 ]) && (65...68).contains(data[2]) {
+    //      data[1] = 79
+    //    }
 
     if let escape = data.firstIndex(of: action.value) {
       // Send data until escape sequence.
@@ -93,75 +101,93 @@ extension InputMode {
   } onEnable: { ctrl in
 
   } parseInput: { ctrl, data in
-    switch (data.removeFirst()) {
-      case 0x1b: // escape (\e)
-        try ctrl.setInputMode(.input)
+    let ch = data.removeFirst()
+    switch (ch) {
       case ctrl.settings.actionKey.value:
         ctrl.send(bytes: [ctrl.settings.actionKey.value])
         try ctrl.setInputMode(.input)
 
+        // create window
+      case Character("c").asciiValue:
+        try ctrl.setInputMode(.addHost)
+
+        // retile
+      case Character("r").asciiValue:
+        ctrl.layout()
+        try ctrl.setInputMode(.input)
+
+        // sort
+      case Character("o").asciiValue:
+        try ctrl.setInputMode(.sort)
+
+        // enable/disable input
+      case Character("e").asciiValue:
+        try ctrl.setInputMode(.enable)
+
+        // enable all
+      case Character("n").asciiValue:
+        ctrl.hosts.forEach {
+          $0.tab.window.zoomed = false
+          $0.enabled = false
+        }
+        try ctrl.setInputMode(.input)
+
+        // toggle enabled
+      case Character("t").asciiValue:
+        ctrl.hosts.forEach {
+          $0.tab.window.zoomed = false
+          $0.enabled = !$0.enabled
+        }
+        try ctrl.setInputMode(.input)
+
+        // Minimize
+      case Character("m").asciiValue:
+        ctrl.hosts.forEach { $0.tab.miniaturize() }
+        try ctrl.setInputMode(.input)
+
+        // Hide
+      case Character("h").asciiValue:
+        ctrl.hosts.forEach { $0.tab.hide() }
+        try ctrl.setInputMode(.input)
+
+        // Send Text
+      case Character("s").asciiValue:
+        try ctrl.setInputMode(.sendString)
+
+        // Change bounds
+      case Character("b").asciiValue:
+        try ctrl.setInputMode(.bounds)
+
+        // add grid row
+      case Character("g").asciiValue:
+        let rows = min(ctrl.windowManager.rows + 1, ctrl.hosts.count)
+        ctrl.windowManager.rows = rows
+        ctrl.layout()
+
+        // remove grid row
+      case Character("G").asciiValue:
+        let rows = max(ctrl.windowManager.rows - 1, 1)
+        ctrl.windowManager.rows = rows
+        ctrl.layout()
+      case Character("x").asciiValue:
+        ctrl.close()
+
+      case 0x1b: // escape (\e)
+        // TODO: if is escape sequence -> delete it and beep.
+        // else switch to input mode
+        try ctrl.setInputMode(.input)
+
+      default:
+        beep()
 /*
- if ($buffer =~ s/^r//) {
-     $obj->master->arrange_windows;
-     return $obj->set_mode_and_parse('input', $buffer);
- } elsif ($buffer =~ s/^o//) {
-     return $obj->set_mode_and_parse('sort', $buffer);
- } elsif ($buffer =~ s/^c//) {
-     return $obj->set_mode_and_parse('addhost', $buffer);
- } elsif ($buffer =~ s/^e//) {
-     foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-         $window->unzoom;
-     }
-     return $obj->set_mode_and_parse('enable', $buffer);
- } elsif ($buffer =~ s/^b//) {
-     return $obj->set_mode_and_parse('bounds', $buffer);
- } elsif ($buffer =~ s/^s//) {
-     return $obj->set_mode_and_parse('sendstring', $buffer);
- } elsif ($buffer =~ s/^G//) {
-     my $x = $config->tile_x - 1;
-     $x = 1 if $x < 1;
-     $config->set('tile_x', $x);
-     $obj->master->arrange_windows;
- } elsif ($buffer =~ s/^g//) {
-     my $x = $config->tile_x + 1;
-     my $slaves = scalar CsshX::Master::Socket::Slave->slaves;
-     $x = $slaves if $x > $slaves;
-     $config->set('tile_x', $x);
-     $obj->master->arrange_windows;
- } elsif ($buffer =~ s/^n//) {
-     foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-         $window->unzoom;
-         $window->set_disabled(0);
-     }
-     return $obj->set_mode_and_parse('input', $buffer);
- } elsif ($buffer =~ s/^t//) {
-     foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-         $window->unzoom;
-         $window->set_disabled(!$window->disabled);
-     }
-     return $obj->set_mode_and_parse('input', $buffer);
- } elsif ($buffer =~ s/^ //) {
+ if ($buffer =~ s/^ //) {
      my @enabled = grep {
          (! $_->disabled) && $_
      } CsshX::Master::Socket::Slave->slaves;
      if (@enabled == 1) { $enabled[0]->select_next(); }
      return $obj->set_mode_and_parse('input', $buffer);
- } elsif ($buffer =~ s/^m//) {
-     $_->minimise foreach (CsshX::Master::Socket::Slave->slaves);
-     return $obj->set_mode_and_parse('input', $buffer);
- } elsif ($buffer =~ s/^h//) {
-     $_->hide foreach (CsshX::Master::Socket::Slave->slaves);
-     return $obj->set_mode_and_parse('input', $buffer);
- } elsif ($buffer =~ s/^\010//) {
-     $_->hide foreach (CsshX::Master::Socket::Slave->slaves);
-     $obj->master->minimise;
-     return $obj->set_mode_and_parse('input', $buffer);
  }
  */
-      case Character("x").asciiValue:
-        ctrl.close()
-      default:
-          print("\u{07}")
     }
   }
 }
@@ -169,7 +195,7 @@ extension InputMode {
 // MARK: -
 extension InputMode {
   static let bounds: InputMode = InputMode { ctrl in
-    ""
+    "\r\n"
   } onEnable: { ctrl in
 
   } parseInput: { ctrl, data in
@@ -240,103 +266,108 @@ extension InputMode {
 // MARK: -
 extension InputMode {
   static let sendString: InputMode = InputMode { ctrl in
-    return "Send string to all active windows: (Esc to exit)\r\n" +
-    "[h]ostname, [c]onnection string, window [i]d, [s]lave id"
+    "Send string to all active windows: (Esc to exit)\r\n" +
+    "[h]ostname, [c]onnection string, window [i]d\r\n"
   } onEnable: { ctrl in
 
   } parseInput: { ctrl, data in
+    let ch = data.removeFirst()
+    switch (ch) {
+        // hostname
+      case Character("h").asciiValue:
+        ctrl.hosts.forEach { host in
+          guard let hostname = host.host.hostname.data(using: .utf8) else {
+            logger.warning("failed to encode hostname into UTF8 data")
+            return
+          }
+          ctrl.send(bytes: hostname, to: host)
+        }
+        try ctrl.setInputMode(.input)
 
+        // connection string
+      case Character("c").asciiValue:
+        ctrl.hosts.forEach { host in
+          guard let hostname = host.host.connectionString.data(using: .utf8) else {
+            logger.warning("failed to encode hostname into UTF8 data")
+            return
+          }
+          ctrl.send(bytes: hostname, to: host)
+        }
+        try ctrl.setInputMode(.input)
+
+        // Window ID
+      case Character("i").asciiValue:
+        ctrl.hosts.forEach { host in
+          guard let wid = String(host.tab.windowId).data(using: .utf8) else {
+            logger.warning("failed to encode window ID into UTF8 data")
+            return
+          }
+          ctrl.send(bytes: wid, to: host)
+        }
+        try ctrl.setInputMode(.input)
+
+      case 0x1b: // escape (\e)
+        // TODO: if is escape sequence -> delete it and beep.
+        // else switch to input mode
+        try ctrl.setInputMode(.input)
+
+      default:
+        beep()
+    }
   }
-  /*
-   'sendstring' => {
-       parse_buffer => sub {
-           my ($obj, $buffer) = @_;
-           while (length $buffer) {
-               if ($buffer =~ s/^c//) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       $window->send_input($window->hostname) unless $window->disabled;
-                   }
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^h//) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       my $str = $window->hostname;
-                       $str =~ s/^[^@]+@//; $str =~ s/:[^:]+$//;
-                       $window->send_input($str) unless $window->disabled;
-                   }
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^i//) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       $window->send_input($window->windowid) unless $window->disabled;
-                   }
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^s//) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       $window->send_input($window->slaveid) unless $window->disabled;
-                   }
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^\e//) {
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } else {
-                   substr($buffer, 0, 1, '');
-                   print "\007";
-               }
-           }
-           $obj->set_read_buffer('');
-       },
-   },
-   */
 }
 
 // MARK: -
 extension InputMode {
   static let sort: InputMode = InputMode { ctrl in
-    ""
+    "Choose sort order: (Esc to exit)\r\n" +
+    "[h]ostname, window [i]d"
   } onEnable: { ctrl in
 
   } parseInput: { ctrl, data in
+    let ch = data.removeFirst()
+    switch (ch) {
+        // hostname
+      case Character("h").asciiValue:
+        ctrl.hosts.sort { h1, h2 in
+          // TODO: sort by port and username of hostname is not enough
+          h1.host.hostname < h2.host.hostname
+        }
+        ctrl.layout()
+        try ctrl.setInputMode(.input)
 
+        // Window ID (should match original order as window ID are increasing)
+      case Character("i").asciiValue:
+        ctrl.hosts.sort { h1, h2 in
+          h1.tab.windowId < h2.tab.windowId
+        }
+        ctrl.layout()
+        try ctrl.setInputMode(.input)
+
+      case 0x1b: // escape (\e)
+        // TODO: if is escape sequence -> delete it and beep.
+        // else switch to input mode
+        try ctrl.setInputMode(.input)
+
+      default:
+        beep()
+    }
   }
-  /*
-   'sort' => {
-       prompt => sub { "Choose sort order: (Esc to exit)\r\n".
-       "[h]ostname, window [i]d" },
-       parse_buffer => sub {
-           my ($obj, $buffer) = @_;
-           while (length $buffer) {
-               if ($buffer =~ s/^h//) {
-                   CsshX::Master::Socket::Slave->set_sort('host');
-                   $obj->master->arrange_windows;
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^i//) {
-                   CsshX::Master::Socket::Slave->set_sort('id');
-                   $obj->master->arrange_windows;
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^\e//) {
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } else {
-                   substr($buffer, 0, 1, '');
-                   print "\007";
-               }
-           }
-           $obj->set_read_buffer('');
-       },
-   },
-   */
 }
 
 // MARK: -
 extension InputMode {
   static let enable: InputMode = InputMode { ctrl in
-    ""
+    "Select window with Arrow keys or h,j,k,l: (Esc to exit)\r\n" +
+    "[e]nable input, [d]isable input, disable [o]thers, disable [O]thers and zoom, [t]oggle input\r\n"
   } onEnable: { ctrl in
-
+    ctrl.hosts.forEach { $0.tab.window.zoomed = false }
   } parseInput: { ctrl, data in
 
   }
   /*
    'enable' => {
-       prompt => sub { "Select window with Arrow keys or h,j,k,l: (Esc to exit)\r\n".
-       "[e]nable input, [d]isable input, disable [o]thers, disable [O]thers and zoom, [t]oggle input" },
+       prompt => sub {  },
        onchange => sub { CsshX::Window::Slave->selection_on; },
        parse_buffer => sub {
            my ($obj, $buffer) = @_;
@@ -399,47 +430,37 @@ extension InputMode {
 // MARK: -
 extension InputMode {
   static let addHost: InputMode = InputMode(raw: false) { ctrl in
-    ""
+    "Add Host: "
   } onEnable: { ctrl in
 
   } parseInput: { ctrl, data in
-
+//    if ($buffer =~ s/^([^\n]*)\e//) {
+//        return $obj->set_mode_and_parse('input', $buffer);
+//    } elsif ($buffer =~ s/^(.*?)\r?\n//) {
+//        my $hostname = $1;
+//        if (length $hostname) {
+//            my $slaveid = CsshX::Master::Socket::Slave->next_slaveid;
+//            my $sock = $config->sock;
+//            my $login = $config->login || '';
+//            my @config = @{$config->config};
+//            my $slave = $obj->master->register_slave($slaveid, $hostname, undef, undef);
+//            $slave->open_window(
+//                __FILE__, '--slave', '--sock', $sock,
+//                '--slavehost', $hostname, '--slaveid', $slaveid,
+//                '--ssh', $config->ssh,
+//                '--ssh_args', $config->ssh_args, '--debug', $config->debug,
+//                $login  ? ( '--login',    $login  ) :(),
+//                (map { ('--config', $_) } @config),
+//            ) or return;
+//
+//            $slave->set_settings_set($config->slave_settings_set)
+//                if $config->slave_settings_set;
+//
+//            $obj->master->arrange_windows;
+//        }
+//        return $obj->set_mode_and_parse('input', $buffer);
+//    }
+//    $obj->set_read_buffer($buffer);
   }
-  /*
-   'addhost' => {
-       prompt => sub { 'Add Host: ' },
-       onchange => sub { system '/bin/stty', 'sane' },
-       parse_buffer => sub {
-           my ($obj, $buffer) = @_;
-           if ($buffer =~ s/^([^\n]*)\e//) {
-               return $obj->set_mode_and_parse('input', $buffer);
-           } elsif ($buffer =~ s/^(.*?)\r?\n//) {
-               my $hostname = $1;
-               if (length $hostname) {
-                   my $slaveid = CsshX::Master::Socket::Slave->next_slaveid;
-                   my $sock = $config->sock;
-                   my $login = $config->login || '';
-                   my @config = @{$config->config};
-                   my $slave = $obj->master->register_slave($slaveid, $hostname, undef, undef);
-                   $slave->open_window(
-                       __FILE__, '--slave', '--sock', $sock,
-                       '--slavehost', $hostname, '--slaveid', $slaveid,
-                       '--ssh', $config->ssh,
-                       '--ssh_args', $config->ssh_args, '--debug', $config->debug,
-                       $login  ? ( '--login',    $login  ) :(),
-                       (map { ('--config', $_) } @config),
-                   ) or return;
-
-                   $slave->set_settings_set($config->slave_settings_set)
-                       if $config->slave_settings_set;
-
-                   $obj->master->arrange_windows;
-               }
-               return $obj->set_mode_and_parse('input', $buffer);
-           }
-           $obj->set_read_buffer($buffer);
-       },
-   },
-   */
 }
 

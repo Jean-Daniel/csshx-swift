@@ -21,15 +21,24 @@ struct WindowLayoutManager {
 
   private var config: Config
 
+  private var layoutBounds: [CGRect]
   private var defaultWindowRatio: Double = 0
 
   init(config: Config) {
     self.config = config
     // TODO: validate that user requested bounds is compatible with the screen bounds
+    layoutBounds = (try? Screen.visibleFrames(screens: config.screens)) ?? []
   }
 
-  var rows: Int { config.rows }
-  var columns: Int { config.columns }
+  var rows: Int {
+    get { config.rows }
+    set { config.rows = newValue }
+  }
+
+  var columns: Int {
+    get { config.columns }
+    set { config.columns = newValue }
+  }
 
   mutating func setDefaultWindowRatio(from tab: Terminal.Tab) {
     if (defaultWindowRatio <= 0) {
@@ -41,50 +50,74 @@ struct WindowLayoutManager {
   }
 
   mutating func layout(controller tab: Terminal.Tab, hosts: [Terminal.Tab]) {
-    tab.window.miniaturized = false
-
-    guard let screens = try? Screen.visibleFrames(screens: config.screens), !screens.isEmpty else {
+    guard !layoutBounds.isEmpty else {
       logger.warning("failed to compute screen bounds. Skipping layout pass.")
       return
     }
 
-    tab.window.frame = CGRect(origin: screens[0].origin, 
-                              size: CGSize(width: screens[0].width, height: config.controllerHeight))
+    tab.window.miniaturized = false
+
+    // FIXME: find on which screen the controller currently is.
+    tab.window.frame = CGRect(origin: layoutBounds[0].origin,
+                              size: CGSize(width: layoutBounds[0].width, height: config.controllerHeight))
 
     // TODO: check set resulting frame ?
     guard !hosts.isEmpty else { return }
 
-    // TODO: move hosts to controller space
-    layout(hosts: hosts, screens: screens)
+    layout(hosts: hosts, screens: layoutBounds, space: tab.space)
   }
 
-  private mutating func layout(hosts: [Terminal.Tab], screens: [CGRect]) {
-    // TODO: multi screen support
-    //   -> compute surface of each screen and split host windows proportionally.
+  private mutating func layout(hosts: [Terminal.Tab], screens: [CGRect], space: Int32) {
+    assert(!hosts.isEmpty)
+    assert(!screens.isEmpty)
 
-    // TODO: for each screen -> layout hosts
-    guard let screen = screens.first else { return }
+    // TODO: create and save grid for selection handling.
 
-    // If main screen -> remove controller frame
-    let (_, bounds) = screen.divided(atDistance: config.controllerHeight, from: .minYEdge)
-    layout(hosts: hosts, on: bounds)
+    var hostsByScreen: [[Terminal.Tab]] = []
+    // TODO: compute surface of each screen and split host windows proportionally.
+    let base = hosts.count / screens.count
+    let remainder = hosts.count % screens.count
+
+    var cursor = 0
+    for _ in 0..<remainder {
+      hostsByScreen.append(Array(hosts[cursor...(cursor + base)]))
+      cursor += base + 1
+    }
+    for _ in remainder..<screens.count {
+      hostsByScreen.append(Array(hosts[cursor..<(cursor + base)]))
+      cursor += base
+    }
+
+    var first = true
+    for (hosts, screen) in zip(hostsByScreen, screens) {
+      if (first) {
+        // If main screen -> remove controller frame
+        let (_, bounds) = screen.divided(atDistance: config.controllerHeight, from: .minYEdge)
+        layout(hosts: hosts, on: bounds, space: space)
+        first = false
+      } else {
+        layout(hosts: hosts, on: screen, space: space)
+      }
+    }
   }
 
   // Compute number of rows
   private func getGrid(for hosts: [Terminal.Tab], on screen: CGRect) -> (Int, Int) {
     let count = hosts.count
     if config.rows > 0 {
-      return (config.rows, Int(ceil(Float(count) / Float(config.rows))))
+      let rows = min(config.rows, hosts.count)
+      return (rows, Int(ceil(Float(count) / Float(rows))))
     }
     if config.columns > 0 {
-      return (Int(ceil(Float(count) / Float(config.columns))), config.columns)
+      let columns = min(config.columns, hosts.count)
+      return (Int(ceil(Float(count) / Float(columns))), columns)
     }
 
     guard defaultWindowRatio > 0 else { return (0, 0) }
     return getBestLayout(for: defaultWindowRatio, hosts: count, on: screen)
   }
 
-  private mutating func layout(hosts: [Terminal.Tab], on screen: CGRect) {
+  private mutating func layout(hosts: [Terminal.Tab], on screen: CGRect, space: Int32) {
     let (rows, columns) = getGrid(for: hosts, on: screen)
     let width = screen.width / CGFloat(columns)
     let height = screen.height / CGFloat(rows)
@@ -92,7 +125,10 @@ struct WindowLayoutManager {
     for (idx, host) in hosts.enumerated() {
       let x = CGFloat(idx % columns) * width
       let y = CGFloat(idx / columns) * height
-
+      // Move to controller space if needed
+      if space > 0 {
+        host.space = space
+      }
       host.window.zoomed = false
       host.window.visible = true
       host.window.miniaturized = false

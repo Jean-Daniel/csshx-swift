@@ -249,14 +249,9 @@ struct Settings {
   var space: Int32 = -1
 
   var layout = WindowLayoutManager.Config()
+  var hostWindow = HostWindow.Config()
 
   var actionKey: EscapeSequence = EscapeSequence(argument: "\\001")!
-
-  var selectedForeground: Terminal.Color?
-  var selectedBackground: Terminal.Color? = Terminal.Color(red: 17990, green: 35209, blue: 53456)
-
-  var disabledForeground: Terminal.Color? = Terminal.Color(red: 37779, green: 37779, blue: 37779)
-  var disabledBackground: Terminal.Color?
 
   var controllerForeground: Terminal.Color? = Terminal.Color(red: 65535, green: 65535, blue: 65535)
   var controllerBackground: Terminal.Color? = Terminal.Color(red: 38036, green: 0, blue: 0)
@@ -264,6 +259,7 @@ struct Settings {
   var resizingForeground: Terminal.Color?
   var resizingBackground: Terminal.Color? = Terminal.Color(red: 17990, green: 35209, blue: 53456)
 
+  // SSH
   var sshArgs: String? = nil
   var remoteCommand: String? = nil
 
@@ -317,11 +313,11 @@ extension Settings {
     "color_setbounds_foreground": .set(\Settings.resizingForeground),
     "color_setbounds_background": .set(\Settings.resizingBackground),
 
-    "color_selected_foreground": .set(\Settings.selectedForeground),
-    "color_selected_background": .set(\Settings.selectedBackground),
+    "color_selected_foreground": .set(\Settings.hostWindow.selectedTextColor),
+    "color_selected_background": .set(\Settings.hostWindow.selectedBackgroundColor),
 
-    "color_disabled_foreground": .set(\Settings.disabledForeground),
-    "color_disabled_background": .set(\Settings.disabledBackground),
+    "color_disabled_foreground": .set(\Settings.hostWindow.disabledTextColor),
+    "color_disabled_background": .set(\Settings.hostWindow.disabledBackgroundColor),
 
     "sock": .set(\Settings.socket),
     "socket": .set(\Settings.socket),

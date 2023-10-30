@@ -52,7 +52,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-- controller --window-id 10533 --tab-idx 1  xenonium.com "
+            argument = "-- controller  xenonium.com "
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

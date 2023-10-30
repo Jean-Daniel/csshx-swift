@@ -10,8 +10,3 @@
 static const AEKeyword kFromProperty = 'from';
 static const AEKeyword kSeldProperty = 'seld';
 
-
-// SPI
-@interface SBObject  (Private)
-- (NSAppleEventDescriptor *)qualifiedSpecifier;
-@end

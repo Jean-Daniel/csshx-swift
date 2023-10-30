@@ -112,65 +112,7 @@ extension Csshx {
       // for await _ in DispatchSource.signals(SIGWINCH) {
       //   await ctrl.setNeedsRedraw()
       // }
-
-      // Start listening on
-      /*
-
-       my $need_redraw = 1;
-
-       sub new {
-           my ($pack) = @_;
-
-           CsshX::Window->init;
-
-           $0 = 'csshX - Master';
-
-           my $sock = $config->sock || die "--sock sockfile is required";
-           unlink $sock;
-           my $obj = $pack->SUPER::new(Listen => 32, Local => $sock) || die $!;
-           chmod 0700, $sock || die "Chmod";
-
-           local $SIG{INT} = 'IGNORE';
-           local $SIG{TSTP} = 'IGNORE';
-           local $SIG{PIPE}  = "IGNORE";
-           local $SIG{WINCH} = sub { $need_redraw=1 };
-
-           $|=1;
-
-           my $stdin = CsshX::Master::Socket::Input->new(*STDIN, "r");
-           $stdin->set_master($obj);
-           $stdin->set_mode('input');
-           $obj->readers->add($stdin);
-
-           kill('USR1', $config->launchpid) || warn "Could not wake up launcher";
-
-           while ((!defined $obj->windowid) || $obj->slave_count || $obj->launcher) {
-               $obj->redraw if $need_redraw;
-               $obj->title("Master - ".join ", ", grep { defined }
-                   map { $_->hostname } CsshX::Master::Socket::Slave->slaves);
-               $obj->handle_io();
-           }
-           unlink $sock;
-           warn "Done";
-       }
-       */
     }
-
-    /*
-     sub can_read {
-         my ($obj) = @_;
-         my $client = $obj->accept("CsshX::Master::Socket::Unknown");
-         $client->set_master($obj);
-         $obj->readers->add($client);
-     }
-
-     sub arrange_windows {
-         my ($obj) = @_;
-         $obj->move_slaves_to_master_space();
-         CsshX::Window::Slave->grid($obj, grep {$_->windowid} $obj->slaves);
-         $obj->format_master();
-     }
-     */
   }
 }
 

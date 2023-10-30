@@ -102,7 +102,7 @@ extension Terminal {
       window.visible = false
     }
 
-    func minimise() {
+    func miniaturize() {
       window.miniaturized = true
     }
 
@@ -112,27 +112,21 @@ extension Terminal {
 
     var space: Int32 {
       get {
-        var ws: CGSWorkspace = 0
-        let error: CGError = CGSGetWindowWorkspace(CGSDefaultConnection(), windowId, &ws)
-        guard error == .success else {
-          logger.warning("error while querying window space: \(error.rawValue)")
-          return -1
-        }
-        return ws
+//        var ws: CGSWorkspace = -1
+//        let error: CGError = CGSGetWindowWorkspace(CGSDefaultConnection(), windowId, &ws)
+//        guard error == .success else {
+//          logger.warning("error while querying window space: \(error.rawValue)")
+//          return -1
+//        }
+        return 0
       }
       nonmutating set {
-        var wids = windowId
-        let error = CGSMoveWorkspaceWindowList(CGSDefaultConnection(), &wids, 1, newValue)
-        if error != .success {
-          logger.warning("error while setting window space: \(error.rawValue)")
-        }
+//        var wids = windowId
+//        let error = CGSMoveWorkspaceWindowList(CGSDefaultConnection(), &wids, 1, CGSWorkspace(newValue))
+//        if error != .success {
+//          logger.warning("error while setting window space: \(error.rawValue)")
+//        }
       }
-    }
-
-    // Return orignal profile, and not current settings.
-    private func getProfile() -> TerminalSettingsSet? {
-      guard let name = tab.currentSettings.name else { return nil }
-      return terminal.settingsSets().object(withName: name) as? TerminalSettingsSet
     }
 
     func setProfile(_ profile: String) -> Bool {
@@ -145,16 +139,36 @@ extension Terminal {
       return tab.currentSettings.name == profile
     }
 
+    /// Terminal does not support alpha channel when passing colors. When resetting a color to the default value,
+    /// instead of fetching the color from the profile and setting it, set the color using an object specifier pointing to the
+    /// tab's "settings set" original value.
     func setTextColor(color: Color?) {
-      if let c = color?.asNSColor() ?? getProfile()?.normalTextColor {
+      if let c = color?.asNSColor() {
         tab.currentSettings.normalTextColor = c
+      } else {
+        try? reset(property: pTextColor)
       }
     }
 
     func setBackgroundColor(color: Color?) {
-      if let c = color?.asNSColor() ?? getProfile()?.backgroundColor {
+      if let c = color?.asNSColor() {
         tab.currentSettings.backgroundColor = c
+      } else {
+        try? reset(property: pBackgroundColor)
       }
+    }
+
+    private func reset(property: AEKeyword) throws {
+      // set <property> of current settings of the_tab to <property> of settings set (name of current settings of the_tab)
+      guard let settings = tab.currentSettings,
+      let name = settings.name else {
+        throw ScriptingBridgeError()
+      }
+
+      let defaults = terminal.settingsSets().object(withName: name) as! SBObject
+      let src = defaults.property(withCode: property)
+
+      settings.property(withCode: property).setTo(src)
     }
   }
 }
@@ -174,7 +188,7 @@ extension Terminal.Tab {
       throw ScriptingBridgeError()
     }
     bridge.delegate = TerminalApplicationDelegate()
-
+    
     guard let tab = bridge.tab(withTTY: tty) else {
       throw ScriptingBridgeError()
     }
