@@ -99,8 +99,7 @@ struct HostList {
       }
 
       var result = [Target]()
-      try _expands(HostSpec(user: host.user, hostname: String(match.output.1),
-                            port: host.port, command: host.command), limit: (limit - into.count) / count, into: &result)
+      try _expands(host.with(hostname: String(match.output.1)), limit: (limit - into.count) / count, into: &result)
       for target in result {
         into.append(contentsOf: repeatElement(target, count: count))
       }

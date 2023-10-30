@@ -195,72 +195,60 @@ extension InputMode {
 // MARK: -
 extension InputMode {
   static let bounds: InputMode = InputMode { ctrl in
-    "\r\n"
+    "Move and resize master with mouse to define bounds: (Enter to accept, Esc to cancel)\r\n" +
+    "(Also Arrow keys of h,j,k,l can move window, hold Ctrl to resize)\r\n" +
+    "[r]eset to default, [f]ull screen, [p]rint current bounds"
   } onEnable: { ctrl in
-
+    // hide all host windows
+    // switch master to resizing mode (color, …)
+    // resize master to match "layout manager" bounds
   } parseInput: { ctrl, data in
-
+    /*
+     my ($obj, $buffer) = @_;
+     while (length $buffer) {
+         #print join(' ', map { unpack("H2", $_) } split //, $buffer)."\r\n";
+         if ($buffer =~ s/^(\014|\e\[5C)//) {
+             $obj->master->grow(1,0);
+         } elsif ($buffer =~ s/^(\010|\e\[5D)//) {
+             $obj->master->grow(-1,0);
+         } elsif ($buffer =~ s/^(\012|\e\[5A)//) {
+             $obj->master->grow(0,1);
+         } elsif ($buffer =~ s/^(\013|\e\[5B)//) {
+             $obj->master->grow(0,-1);
+         } elsif ($buffer =~ s/^(l|\e\[C)//) {
+             $obj->master->move(1,0)
+         } elsif ($buffer =~ s/^(h|\e\[D)//) {
+             $obj->master->move(-1,0);
+         } elsif ($buffer =~ s/^(k|\e\[A)//) {
+             $obj->master->move(0,-1);
+         } elsif ($buffer =~ s/^(j|\e\[B)//) {
+             $obj->master->move(0,1);
+         } elsif ($buffer =~ s/^\r//) {
+             $obj->master->bounds_as_size;
+             $obj->master->format_master;
+             $obj->master->arrange_windows;
+             return $obj->set_mode_and_parse('input', $buffer);
+         } elsif ($buffer =~ s/^\e//) {
+             $obj->master->format_master;
+             $obj->master->arrange_windows;
+             return $obj->set_mode_and_parse('input', $buffer);
+         } elsif ($buffer =~ s/^r//) {
+             $obj->master->reset_bounds;
+             $obj->master->size_as_bounds;
+         } elsif ($buffer =~ s/^p//) {
+             $obj->master->redraw;
+             my $b = $obj->master->bounds;
+             print "\r\n\r\nscreen_bounds = {".join(", ",@$b)."}\r\n";
+         } elsif ($buffer =~ s/^f//) {
+             $obj->master->max_physical_bounds;
+             $obj->master->size_as_bounds;
+         } else {
+             substr($buffer, 0, 1, '');
+             print "\007";
+         }
+     }
+     */
   }
-  /*
-   'bounds' => {
-       prompt => sub { "Move and resize master with mouse to define bounds: (Enter to accept, ".
-       "Esc to cancel)\r\n".
-       "(Also Arrow keys of h,j,k,l can move window, hold Ctrl to resize)\r\n".
-       "[r]eset to default, [f]ull screen, [p]rint current bounds" },
-       onchange => sub {
-           my ($obj) = @_;
-           $obj->master->format_resize;
-           $obj->master->size_as_bounds;
-           $_->hide foreach (CsshX::Master::Socket::Slave->slaves);
-       },
-       parse_buffer => sub {
-           my ($obj, $buffer) = @_;
-           while (length $buffer) {
-               #print join(' ', map { unpack("H2", $_) } split //, $buffer)."\r\n";
-               if ($buffer =~ s/^(\014|\e\[5C)//) {
-                   $obj->master->grow(1,0);
-               } elsif ($buffer =~ s/^(\010|\e\[5D)//) {
-                   $obj->master->grow(-1,0);
-               } elsif ($buffer =~ s/^(\012|\e\[5A)//) {
-                   $obj->master->grow(0,1);
-               } elsif ($buffer =~ s/^(\013|\e\[5B)//) {
-                   $obj->master->grow(0,-1);
-               } elsif ($buffer =~ s/^(l|\e\[C)//) {
-                   $obj->master->move(1,0)
-               } elsif ($buffer =~ s/^(h|\e\[D)//) {
-                   $obj->master->move(-1,0);
-               } elsif ($buffer =~ s/^(k|\e\[A)//) {
-                   $obj->master->move(0,-1);
-               } elsif ($buffer =~ s/^(j|\e\[B)//) {
-                   $obj->master->move(0,1);
-               } elsif ($buffer =~ s/^\r//) {
-                   $obj->master->bounds_as_size;
-                   $obj->master->format_master;
-                   $obj->master->arrange_windows;
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^\e//) {
-                   $obj->master->format_master;
-                   $obj->master->arrange_windows;
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^r//) {
-                   $obj->master->reset_bounds;
-                   $obj->master->size_as_bounds;
-               } elsif ($buffer =~ s/^p//) {
-                   $obj->master->redraw;
-                   my $b = $obj->master->bounds;
-                   print "\r\n\r\nscreen_bounds = {".join(", ",@$b)."}\r\n";
-               } elsif ($buffer =~ s/^f//) {
-                   $obj->master->max_physical_bounds;
-                   $obj->master->size_as_bounds;
-               } else {
-                   substr($buffer, 0, 1, '');
-                   print "\007";
-               }
-           }
-           $obj->set_read_buffer('');
-       },
-   },
-   */
 }
 
 // MARK: -
@@ -362,69 +350,60 @@ extension InputMode {
     "[e]nable input, [d]isable input, disable [o]thers, disable [O]thers and zoom, [t]oggle input\r\n"
   } onEnable: { ctrl in
     ctrl.hosts.forEach { $0.tab.window.zoomed = false }
+    // TODO: select first host window
   } parseInput: { ctrl, data in
-
+    /*
+     while (length $buffer) {
+         #print join(' ', map { unpack("H2", $_) } split //, $buffer)."\r\n";
+         if ($buffer =~ s/^(l|\e\[C)//) {
+             CsshX::Window::Slave->select_move(1,0);
+         } elsif ($buffer =~ s/^(h|\e\[D)//) {
+             CsshX::Window::Slave->select_move(-1,0);
+         } elsif ($buffer =~ s/^(k|\e\[A)//) {
+             CsshX::Window::Slave->select_move(0,-1);
+         } elsif ($buffer =~ s/^(j|\e\[B)//) {
+             CsshX::Window::Slave->select_move(0,1);
+         } elsif ($buffer =~ s/^[\e\r]//) {
+             CsshX::Window::Slave->selection_off;
+             return $obj->set_mode_and_parse('input', $buffer);
+         } elsif ($buffer =~ s/^d//) {
+             if (my $window = CsshX::Window::Slave->selected_window()) {
+                 $window->set_disabled(1);
+             }
+         } elsif ($buffer =~ s/^e//) {
+             if (my $window = CsshX::Window::Slave->selected_window()) {
+                 $window->set_disabled(0);
+             }
+         } elsif ($buffer =~ s/^t//) {
+             if (my $window = CsshX::Window::Slave->selected_window()) {
+                 $window->set_disabled(!$window->disabled);
+             }
+         } elsif ($buffer =~ s/^o//) {
+             if (my $selected = CsshX::Window::Slave->selected_window()) {
+                 foreach my $window (CsshX::Master::Socket::Slave->slaves) {
+                     $window->set_disabled(1) unless $window == $selected;
+                 }
+                 $selected->set_disabled(0);
+                 CsshX::Window::Slave->selection_off;
+                 return $obj->set_mode_and_parse('input', $buffer);
+             }
+         } elsif ($buffer =~ s/^O//) {
+             if (my $selected = CsshX::Window::Slave->selected_window()) {
+                 foreach my $window (CsshX::Master::Socket::Slave->slaves) {
+                     $window->set_disabled(1) unless $window == $selected;
+                 }
+                 $selected->set_disabled(0);
+                 CsshX::Window::Slave->selection_off;
+                 $selected->zoom();
+                 return $obj->set_mode_and_parse('input', $buffer);
+             }
+         } else {
+             substr($buffer, 0, 1, '');
+             print "\007";
+         }
+     }
+     */
   }
-  /*
-   'enable' => {
-       prompt => sub {  },
-       onchange => sub { CsshX::Window::Slave->selection_on; },
-       parse_buffer => sub {
-           my ($obj, $buffer) = @_;
-
-           while (length $buffer) {
-               #print join(' ', map { unpack("H2", $_) } split //, $buffer)."\r\n";
-               if ($buffer =~ s/^(l|\e\[C)//) {
-                   CsshX::Window::Slave->select_move(1,0);
-               } elsif ($buffer =~ s/^(h|\e\[D)//) {
-                   CsshX::Window::Slave->select_move(-1,0);
-               } elsif ($buffer =~ s/^(k|\e\[A)//) {
-                   CsshX::Window::Slave->select_move(0,-1);
-               } elsif ($buffer =~ s/^(j|\e\[B)//) {
-                   CsshX::Window::Slave->select_move(0,1);
-               } elsif ($buffer =~ s/^[\e\r]//) {
-                   CsshX::Window::Slave->selection_off;
-                   return $obj->set_mode_and_parse('input', $buffer);
-               } elsif ($buffer =~ s/^d//) {
-                   if (my $window = CsshX::Window::Slave->selected_window()) {
-                       $window->set_disabled(1);
-                   }
-               } elsif ($buffer =~ s/^e//) {
-                   if (my $window = CsshX::Window::Slave->selected_window()) {
-                       $window->set_disabled(0);
-                   }
-               } elsif ($buffer =~ s/^t//) {
-                   if (my $window = CsshX::Window::Slave->selected_window()) {
-                       $window->set_disabled(!$window->disabled);
-                   }
-               } elsif ($buffer =~ s/^o//) {
-                   if (my $selected = CsshX::Window::Slave->selected_window()) {
-                       foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                           $window->set_disabled(1) unless $window == $selected;
-                       }
-                       $selected->set_disabled(0);
-                       CsshX::Window::Slave->selection_off;
-                       return $obj->set_mode_and_parse('input', $buffer);
-                   }
-               } elsif ($buffer =~ s/^O//) {
-                   if (my $selected = CsshX::Window::Slave->selected_window()) {
-                       foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                           $window->set_disabled(1) unless $window == $selected;
-                       }
-                       $selected->set_disabled(0);
-                       CsshX::Window::Slave->selection_off;
-                       $selected->zoom();
-                       return $obj->set_mode_and_parse('input', $buffer);
-                   }
-               } else {
-                   substr($buffer, 0, 1, '');
-                   print "\007";
-               }
-           }
-           $obj->set_read_buffer('');
-       },
-   },
-   */
 }
 
 // MARK: -
@@ -434,33 +413,30 @@ extension InputMode {
   } onEnable: { ctrl in
 
   } parseInput: { ctrl, data in
-//    if ($buffer =~ s/^([^\n]*)\e//) {
-//        return $obj->set_mode_and_parse('input', $buffer);
-//    } elsif ($buffer =~ s/^(.*?)\r?\n//) {
-//        my $hostname = $1;
-//        if (length $hostname) {
-//            my $slaveid = CsshX::Master::Socket::Slave->next_slaveid;
-//            my $sock = $config->sock;
-//            my $login = $config->login || '';
-//            my @config = @{$config->config};
-//            my $slave = $obj->master->register_slave($slaveid, $hostname, undef, undef);
-//            $slave->open_window(
-//                __FILE__, '--slave', '--sock', $sock,
-//                '--slavehost', $hostname, '--slaveid', $slaveid,
-//                '--ssh', $config->ssh,
-//                '--ssh_args', $config->ssh_args, '--debug', $config->debug,
-//                $login  ? ( '--login',    $login  ) :(),
-//                (map { ('--config', $_) } @config),
-//            ) or return;
-//
-//            $slave->set_settings_set($config->slave_settings_set)
-//                if $config->slave_settings_set;
-//
-//            $obj->master->arrange_windows;
-//        }
-//        return $obj->set_mode_and_parse('input', $buffer);
-//    }
-//    $obj->set_read_buffer($buffer);
+    // If data contains an escape char -> discard all data
+    // This is different from original csshx which only discard data up to the escape char.
+    if data.contains(27) {
+      data.removeAll()
+      try ctrl.setInputMode(.input)
+    }
+    guard var hostname = String(bytes: data, encoding: .utf8) else {
+      data.removeAll()
+      beep()
+      return
+    }
+    // Whatever append -> discard buffer content
+    data.removeAll()
+
+    let (user, host, p) = try hostname.trimmingCharacters(in: .whitespacesAndNewlines).parseUserHostPort()
+    let target = Target(user: user, hostname: host, port: p.flatMap(UInt16.init), command: nil)
+    try ctrl.add(host: target) { error in
+      if let error {
+        logger.warning("error while starting host \(target.connectionString): \(error)")
+      } else {
+        ctrl.layout()
+      }
+    }
+    try ctrl.setInputMode(.input)
   }
 }
 
