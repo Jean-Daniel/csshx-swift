@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import System
 
 let TerminalBundleId = "com.apple.Terminal"
 
@@ -25,26 +26,26 @@ struct Terminal {
        let settings = defaults?.dictionary(forKey: "Window Settings")?[defaultProfile] as? Dictionary<String, Any>,
        let runAsShell = settings["RunCommandAsShell"] as? Bool, runAsShell,
        let shell = settings["CommandString"] as? String {
-      _shell = shell
+      // remove leading '-' included by default by Terminal
+      _shell = FilePath(shell).lastComponent?.string.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
     
     // Then for the global terminal settings
-    if (_shell?.isEmpty != false) {
-      _shell = defaults?.string(forKey: "Shell")
+    if (_shell?.isEmpty != false), let shell = defaults?.string(forKey: "Shell") {
+      _shell = FilePath(shell).lastComponent?.string
     }
     
     // Then in passwd.
     if (_shell?.isEmpty != false) {
       if let passwd = getpwuid(getuid()) {
-        _shell = String(cString: passwd.pointee.pw_shell)
+        _shell = FilePath(platformString: passwd.pointee.pw_shell).lastComponent?.string
       }
     }
     
     // And fallback to default shell
     if (_shell?.isEmpty != false) {
-      _shell = "/bin/zsh"
+      _shell = "zsh"
     }
-    
     return _shell!
   }
 

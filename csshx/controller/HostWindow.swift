@@ -28,7 +28,9 @@ class HostWindow: Equatable {
 
   var enabled: Bool = true {
     didSet {
-      setColors()
+      if (oldValue != enabled) {
+        setColors()
+      }
     }
   }
 
@@ -36,7 +38,9 @@ class HostWindow: Equatable {
 
   var selected: Bool = false {
     didSet {
-      setColors()
+      if (oldValue != selected) {
+        setColors()
+      }
     }
   }
 
@@ -63,7 +67,6 @@ class HostWindow: Equatable {
   func terminate() {
     connection?.close(flags: .stop)
     connection = nil
-    enabled = false
     // Closing window in case the profile does not close window automatically
     // tab.close()
   }
@@ -72,6 +75,8 @@ class HostWindow: Equatable {
     return lhs.host == rhs.host && lhs.tab == rhs.tab
   }
 }
+
+extension HostWindow: Identifiable {}
 
 extension HostWindow: CustomStringConvertible {
   var description: String {

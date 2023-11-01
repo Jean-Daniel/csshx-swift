@@ -79,7 +79,7 @@ class Controller {
   }
 
   private func send(bytes: DispatchData, to host: HostWindow) {
-    // Skip disabled hosts, and not connected host
+    // Skip disabled hosts, and host without valid connection
     guard host.enabled, let connection = host.connection else { return }
 
     connection.write(bytes) { [self] error in
@@ -107,6 +107,7 @@ class Controller {
     inputMode = mode
 
     try setRawInputMode(mode.raw)
+    // Must enable before prompt
     try mode.onEnable(self)
     prompt()
   }
@@ -159,7 +160,6 @@ class Controller {
   // MARK: - Layout
   func layout() {
     guard let tab else { return }
-    let hosts = hosts.compactMap { $0.tab }
     windowManager.layout(controller: tab, hosts: hosts)
     // Always make sure the controller window is frontmost window
     tab.window.frontmost = true

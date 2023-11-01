@@ -62,17 +62,27 @@ extension Terminal {
     let windowId: CGWindowID
 
     static func == (lhs: Tab, rhs: Tab) -> Bool {
-      return lhs.tabIdx == rhs.tabIdx && lhs.windowId == rhs.windowId
+      return lhs.windowId == rhs.windowId && lhs.tabIdx == rhs.tabIdx 
     }
 
     func run(args: [String], clear: Bool, exec: Bool) throws {
-      var script = " " // space to ignore history in fish
-      if clear {
-        script.append("clear && ")
+      let shell = Terminal.shell
+
+      // Hide the command from any shell history
+      var script = ""
+      switch (shell) {
+        case "bash", "sh":
+          script.append("history -d $(($HISTCMD-1)) && ")
+          // TODO: - (t)csh, ksh, zsh
+        default:
+          // prepend space to ignore history in fish and zsh if configured
+          script.append(" ")
+          break
       }
-      if exec {
-        script.append("exec ")
-      }
+
+      if clear { script.append("clear && ") }
+      if exec { script.append("exec ") }
+
       script += args.map(quote(arg:)).joined(separator: " ")
       guard terminal.doScript(script, in: tab) == tab else {
         throw ScriptingBridgeError()
