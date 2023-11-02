@@ -23,7 +23,7 @@ class Controller {
   var hosts: [HostWindow] = []
   var windowManager: WindowLayoutManager
 
-  private var inputMode: InputMode = .starting
+  private var inputMode: any InputModeProtocol = InputMode.Starting()
 
   private var buffer: [UInt8] = []
   private var stdin: DispatchIO? = nil
@@ -52,17 +52,18 @@ class Controller {
 
     // if mode changed and buffer is not empty -> reparse
     while (!buffer.isEmpty) {
-      let id = inputMode.id
       do {
-        try inputMode.parseInput(self, &buffer)
+        if let mode = try inputMode.parse(input: &buffer, self) {
+          try setInputMode(mode)
+        } else {
+          // No mode change -> needs more data, exit the loop
+          break
+        }
       } catch {
         logger.error("error while processing input: \(error)")
         close()
         return
       }
-
-      // No mode change, exit the loop
-      if (id == inputMode.id) { break }
     }
   }
 
@@ -100,15 +101,17 @@ class Controller {
     fwrite(str: prompt)
   }
 
-  func setInputMode(_ mode: InputMode) throws {
+  // Note: private so an InputMode cannot try to set it in a callback
+  // causing an 'inputMode' exclusive access violation.
+  private func setInputMode(_ mode: some InputModeProtocol) throws {
     guard mode.id != inputMode.id else { return }
 
     logger.info("Switching input mode")
     inputMode = mode
 
-    try setRawInputMode(mode.raw)
+    try setRawInputMode(inputMode.raw)
     // Must enable before prompt
-    try mode.onEnable(self)
+    try inputMode.onEnable(self)
     prompt()
   }
 
@@ -224,9 +227,9 @@ extension Controller {
   }
 
   func ready() throws {
-    if inputMode == .starting {
+    if inputMode is InputMode.Starting {
       layout()
-      try setInputMode(.input)
+      try setInputMode(InputMode.Input())
     }
   }
   
