@@ -87,7 +87,7 @@ struct stty {
   }
 }
 
-func getBestLayout(for ratio: Double, hosts: Int, on screen: CGRect) -> (Int, Int) {
+func getBestLayout(for ratio: Double, hosts: Int, on screen: CGSize) -> (Int, Int) {
   var bestRowCount = 0
   var bestColumnCount = 0
   var bestRatioDelta = Double.infinity

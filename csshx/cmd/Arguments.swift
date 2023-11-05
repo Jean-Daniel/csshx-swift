@@ -74,9 +74,9 @@ struct LayoutOptions: ParsableArguments {
   func override(_ settings: inout Settings) {
     if let space { settings.space = Int32(space) }
 
-    if let screens { settings.layout.screens = screens }
-    if let columns { settings.layout.columns = columns }
-    if let rows { settings.layout.rows = rows }
+//    if let screens { settings.layout.screens = screens }
+//    if let columns { settings.layout.columns = columns }
+//    if let rows { settings.layout.rows = rows }
     settings.sortHosts = settings.sortHosts || sortHosts
     if let interleave { settings.interleave = interleave }
     if let controllerWindowProfile { settings.controllerWindowProfile = controllerWindowProfile }

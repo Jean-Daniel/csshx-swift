@@ -253,11 +253,11 @@ struct Settings {
 
   var actionKey: EscapeSequence = EscapeSequence(argument: "\\001")!
 
-  var controllerForeground: Terminal.Color? = Terminal.Color(red: 65535, green: 65535, blue: 65535)
+  var controllerTextColor: Terminal.Color? = Terminal.Color(red: 65535, green: 65535, blue: 65535)
   var controllerBackground: Terminal.Color? = Terminal.Color(red: 38036, green: 0, blue: 0)
 
-  var resizingForeground: Terminal.Color?
-  var resizingBackground: Terminal.Color? = Terminal.Color(red: 17990, green: 35209, blue: 53456)
+  var resizingTextColor: Terminal.Color?
+  var resizingBackgroundColor: Terminal.Color? = Terminal.Color(red: 17990, green: 35209, blue: 53456)
 
   // SSH
   var sshArgs: String? = nil
@@ -305,13 +305,13 @@ extension Settings {
     "slave_settings_set": .set(\Settings.hostWindowProfile),
     "host_window_profile": .set(\Settings.hostWindowProfile),
 
-    "color_master_foreground": .set(\Settings.controllerForeground),
-    "color_controller_foreground": .set(\Settings.controllerForeground),
+    "color_master_foreground": .set(\Settings.controllerTextColor),
+    "color_controller_text": .set(\Settings.controllerTextColor),
     "color_master_background": .set(\Settings.controllerBackground),
     "color_controller_background": .set(\Settings.controllerBackground),
 
-    "color_setbounds_foreground": .set(\Settings.resizingForeground),
-    "color_setbounds_background": .set(\Settings.resizingBackground),
+    "color_setbounds_foreground": .set(\Settings.resizingTextColor),
+    "color_setbounds_background": .set(\Settings.resizingBackgroundColor),
 
     "color_selected_foreground": .set(\Settings.hostWindow.selectedTextColor),
     "color_selected_background": .set(\Settings.hostWindow.selectedBackgroundColor),
@@ -339,14 +339,14 @@ extension Settings {
     // Screen Layout
     "space": .set(\Settings.space),
 
-    "tile_x": .set(\Settings.layout.columns),
-    "columns": .set(\Settings.layout.columns),
-    "tile_y": .set(\Settings.layout.rows),
-    "rows": .set(\Settings.layout.rows),
-
-    "screen": .set(\Settings.layout.screens),
-    "screens": .set(\Settings.layout.screens),
-    "screen_bounds": .set(\Settings.layout.screenBounds),
+//    "tile_x": .set(\Settings.layout.columns),
+//    "columns": .set(\Settings.layout.columns),
+//    "tile_y": .set(\Settings.layout.rows),
+//    "rows": .set(\Settings.layout.rows),
+//
+//    "screen": .set(\Settings.layout.screens),
+//    "screens": .set(\Settings.layout.screens),
+//    "screen_bounds": .set(\Settings.layout.screenBounds),
 
     "master_height": .set(\Settings.layout.controllerHeight),
     "controller_height": .set(\Settings.layout.controllerHeight),

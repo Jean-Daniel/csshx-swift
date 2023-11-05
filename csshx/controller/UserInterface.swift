@@ -87,7 +87,7 @@ extension InputMode {
 extension InputMode {
 
   private static let csiCursorCode = Regex {
-    "\u{001b}["
+    "\u{1b}["
     Capture("A"..."D")
   }
 
@@ -227,16 +227,14 @@ extension InputMode {
 
       // add grid row
       else if "g" ~= input {
-        //        let rows = min(ctrl.windowManager.rows + 1, ctrl.hosts.count)
-        //        ctrl.windowManager.rows = rows
-        //        ctrl.layout()
+//        ctrl.windowManager.controllerScreen?.addColumn()
+//        ctrl.layout()
       }
 
       // remove grid row
       else if "G" ~= input {
-        //        let rows = max(ctrl.windowManager.rows - 1, 1)
-        //        ctrl.windowManager.rows = rows
-        //        ctrl.layout()
+//        ctrl.windowManager.controllerScreen?.removeColumn()
+//        ctrl.layout()
       }
 
       // exit
@@ -274,23 +272,93 @@ extension InputMode {
 
     var raw: Bool { true }
 
+    private var screen: Screen? = nil
+
     func prompt(_ ctrl: Controller) -> String {
       "Move and resize master with mouse to define bounds: (Enter to accept, Esc to cancel)\r\n" +
       "(Also Arrow keys of h,j,k,l can move window, hold Ctrl to resize)\r\n" +
       "[r]eset to default, [f]ull screen, [p]rint current bounds"
     }
     
-    func onEnable(_ ctrl: Controller) throws {
+    mutating func onEnable(_ ctrl: Controller) throws {
       // hide all host windows
+      ctrl.hosts.forEach { $0.tab.hide() }
+
       // switch master to resizing mode (color, …)
+      if let color = ctrl.settings.resizingTextColor {
+        ctrl.tab?.setTextColor(color: color)
+      }
+      if let color = ctrl.settings.resizingBackgroundColor {
+        ctrl.tab?.setBackgroundColor(color: color)
+      }
+
       // resize master to match "layout manager" bounds
+      screen = ctrl.windowManager.controllerScreen
+      if let screen, !screen.frame.isEmpty {
+        // FIXME: screen.frame does not include controller frame
+        ctrl.tab?.window.frame = screen.frame
+      }
     }
-    
-    func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
-      if 0x1b ~= input {
+
+    mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
+      // ↑
+      if "i" ~= input || "\u{1b}[A" ~= input {
+        ctrl.move(dx: 0, dy: 1)
+      }
+      // shift ↑
+      else if "\u{1b}[1;2A" ~= input {
+
+      }
+
+      // ↓
+      else if "k" ~= input || "\u{1b}[B" ~= input {
+        ctrl.move(dx: 0, dy: -1)
+      }
+      // shift ↓
+      else if "\u{1b}[1;2B" ~= input {
+
+      }
+
+      // →
+      else if "l" ~= input || "\u{1b}[C" ~= input {
+        ctrl.move(dx: 1, dy: 0)
+      }
+      // shift →
+      else if "\u{1b}[1;2C" ~= input {
+
+      }
+
+      // ←
+      else if "j" ~= input || "\u{1b}[D" ~= input {
+        ctrl.move(dx: -1, dy: 0)
+      }
+      // shift ←
+      else if "\u{1b}[1;2D" ~= input {
+
+      }
+
+      // print bounds
+      else if "p" ~= input {
+        if let bounds = ctrl.tab?.window.frame {
+          fwrite(str: "\r\n\r\nscreen_bounds = { \(Int(bounds.origin.x)), \(Int(bounds.origin.y)), \(Int(bounds.width)), \(Int(bounds.height)) }\r\n")
+        } else {
+          beep()
+        }
+      }
+
+      // full screen
+      else if "f" ~= input {
+        if let screen, !screen.visibleFrame.isEmpty {
+          ctrl.tab?.window.frame = screen.visibleFrame
+        }
+      }
+
+      else if 0x1b ~= input {
         // escape (\e)
         // TODO: if is escape sequence -> delete it and beep.
         // else switch to input mode
+        ctrl.setControllerColors()
+        ctrl.layout()
         return InputMode.Input()
       } else {
         input.removeAll()
@@ -309,37 +377,28 @@ extension InputMode {
                $obj->master->grow(0,1);
            } elsif ($buffer =~ s/^(\013|\e\[5B)//) {
                $obj->master->grow(0,-1);
-           } elsif ($buffer =~ s/^(l|\e\[C)//) {
-               $obj->master->move(1,0)
-           } elsif ($buffer =~ s/^(h|\e\[D)//) {
-               $obj->master->move(-1,0);
-           } elsif ($buffer =~ s/^(k|\e\[A)//) {
-               $obj->master->move(0,-1);
-           } elsif ($buffer =~ s/^(j|\e\[B)//) {
-               $obj->master->move(0,1);
            } elsif ($buffer =~ s/^\r//) {
                $obj->master->bounds_as_size;
-               $obj->master->format_master;
-               $obj->master->arrange_windows;
-               return $obj->set_mode_and_parse('input', $buffer);
-           } elsif ($buffer =~ s/^\e//) {
                $obj->master->format_master;
                $obj->master->arrange_windows;
                return $obj->set_mode_and_parse('input', $buffer);
            } elsif ($buffer =~ s/^r//) {
                $obj->master->reset_bounds;
                $obj->master->size_as_bounds;
-           } elsif ($buffer =~ s/^p//) {
-               $obj->master->redraw;
-               my $b = $obj->master->bounds;
-               print "\r\n\r\nscreen_bounds = {".join(", ",@$b)."}\r\n";
-           } elsif ($buffer =~ s/^f//) {
-               $obj->master->max_physical_bounds;
-               $obj->master->size_as_bounds;
            }
        }
        */
       return nil
+    }
+  }
+}
+
+private extension Controller {
+  func move(dx: Int, dy: Int) {
+    if var origin = tab?.window.origin {
+      origin.x += 10 * CGFloat(dx)
+      origin.y += 10 * CGFloat(dy)
+      tab?.window.origin = origin
     }
   }
 }
@@ -468,7 +527,7 @@ extension InputMode {
 // MARK: -
 extension InputMode {
 
-  // TODO: multi screen support -> add an keystroke to move to the next screen (maybe space).
+  // TODO: multi screen support -> add an keystroke to move to the next screen (maybe tab).
   // TODO: Add the screen ID in the prompt ?
   struct Enable: InputModeProtocol {
 
@@ -496,7 +555,7 @@ extension InputMode {
 
     mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
       // ↑
-      if "i" ~= input || "\u{001b}[A" ~= input {
+      if "i" ~= input || "\u{1b}[A" ~= input {
         if let selected = selection,
            let next = ctrl.windowManager.getHostAbove(selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
@@ -505,7 +564,7 @@ extension InputMode {
         }
       }
       // ↓
-      else if "k" ~= input || "\u{001b}[B" ~= input {
+      else if "k" ~= input || "\u{1b}[B" ~= input {
         if let selected = selection,
            let next = ctrl.windowManager.getHostBelow(selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
@@ -514,7 +573,7 @@ extension InputMode {
         }
       }
       // →
-      else if "l" ~= input || "\u{001b}[C" ~= input {
+      else if "l" ~= input || "\u{1b}[C" ~= input {
         if let selected = selection,
            let next = ctrl.windowManager.getHostAfter(selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
@@ -523,7 +582,7 @@ extension InputMode {
         }
       }
       // ←
-      else if "j" ~= input || "\u{001b}[D" ~= input {
+      else if "j" ~= input || "\u{1b}[D" ~= input {
         if let selected = selection,
            let next = ctrl.windowManager.getHostBefore(selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
@@ -546,6 +605,36 @@ extension InputMode {
         }
       }
 
+      // disable others
+      else if "o" ~= input {
+        if let selected = selection {
+          ctrl.hosts.forEach {
+            if ($0 != selected) {
+              $0.enabled = false
+            }
+            $0.selected = false
+          }
+          selected.enabled = true
+          return InputMode.Input()
+        }
+      }
+
+      // disable others and zoom
+      else if "O" ~= input {
+        if let selected = selection {
+          ctrl.hosts.forEach {
+            if ($0 != selected) {
+              $0.enabled = false
+            }
+            $0.selected = false
+          }
+          // TODO: zoom
+          selected.enabled = true
+          return InputMode.Input()
+        }
+      }
+
+
       else if 0x1b ~= input || 0x0d ~= input {
         // escape (\e)
         // TODO: if is escape sequence -> delete it and beep.
@@ -557,32 +646,8 @@ extension InputMode {
         beep()
       }
 
-      /*
-           #print join(' ', map { unpack("H2", $_) } split //, $buffer)."\r\n";
-           if ($buffer =~ s/^o//) {
-               if (my $selected = CsshX::Window::Slave->selected_window()) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       $window->set_disabled(1) unless $window == $selected;
-                   }
-                   $selected->set_disabled(0);
-                   CsshX::Window::Slave->selection_off;
-                   return $obj->set_mode_and_parse('input', $buffer);
-               }
-           } elsif ($buffer =~ s/^O//) {
-               if (my $selected = CsshX::Window::Slave->selected_window()) {
-                   foreach my $window (CsshX::Master::Socket::Slave->slaves) {
-                       $window->set_disabled(1) unless $window == $selected;
-                   }
-                   $selected->set_disabled(0);
-                   CsshX::Window::Slave->selection_off;
-                   $selected->zoom();
-                   return $obj->set_mode_and_parse('input', $buffer);
-               }
-           }
-       */
       return nil
     }
-
   }
 }
 

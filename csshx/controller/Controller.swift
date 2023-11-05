@@ -37,7 +37,9 @@ class Controller {
     buffer.reserveCapacity(256)
 
     windowManager = WindowLayoutManager(config: settings.layout)
-    layoutControllerWindow()
+
+    setControllerColors()
+    layout()
   }
 
   func close() {
@@ -163,25 +165,24 @@ class Controller {
   // MARK: - Layout
   func layout() {
     guard let tab else { return }
+
     windowManager.layout(controller: tab, hosts: hosts)
     // Always make sure the controller window is frontmost window
     tab.window.frontmost = true
   }
 
-  private func layoutControllerWindow() {
+  func setControllerColors() {
     guard let tab else { return }
 
     if let color = settings.controllerBackground {
       tab.setBackgroundColor(color: color)
     }
 
-    if let color = settings.controllerForeground {
+    if let color = settings.controllerTextColor {
       tab.setTextColor(color: color)
     }
-
-    windowManager.layout(controller: tab, hosts: [])
-    tab.window.frontmost = true
   }
+
 }
 
 // MARK: - Controller Socket & Hosts Management

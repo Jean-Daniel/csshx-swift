@@ -12,131 +12,40 @@ struct ScreenId {
   let rawValue: Int
 }
 
+// Maintains a list of all screens, with current configuration (columns, bounds, …)
+// On layout:
+//  - dispatch hosts on active screens (default to all).
+//  - layout each screen using current screen configuration.
+// On screen removed -> auto relayout
+// On screen plugged ->
+//    - if known screen: auto relayout
+//    - if new screen: wait for relayout command.
+
 // TODO: Listen for screen configuration change notification
 struct WindowLayoutManager {
 
   struct Config {
-    var rows: Int = 0
-    var columns: Int = 0
-    var screens: Array<Int> = []
-    var screenBounds: CGRect? = nil
+//    var rows: Int = 0
+//    var columns: Int = 0
+//    var screens: Array<Int> = []
+//    var screenBounds: CGRect? = nil
     var controllerHeight: CGFloat = 87 // Pixels ?
-  }
-
-  struct Screen {
-    let id: ScreenId
-    var bounds: CGRect
-    var isControllerScreen = false
-
-    // Layout state
-    var hosts: [HostWindow.ID] = []
-    private(set) var rows: Int = 0
-    private(set) var columns: Int = 0
-
-    fileprivate mutating func set(hosts: [HostWindow.ID], rows: Int, columns: Int) {
-      self.hosts = hosts
-      self.rows = rows
-      self.columns = columns
-    }
-
-    func getHostAbove(_ host: HostWindow.ID) -> HostWindow.ID? {
-      guard columns > 0,
-            let idx = hosts.firstIndex(of: host) else {
-        return nil
-      }
-      let row = idx / columns
-      // This is not the first row -> return host above
-      if row > 0 {
-        return hosts[idx - columns]
-      }
-
-      // Lookup the last row containing a value in column
-      let column = idx % columns
-      // Compute index of the host above
-      let wrapIdx = (rows - 1) * columns + column
-      if wrapIdx >= hosts.endIndex {
-        return (wrapIdx - columns) != idx ? hosts[wrapIdx - columns] : nil
-      }
-      return hosts[wrapIdx]
-    }
-
-    func getHostBelow(_ host: HostWindow.ID) -> HostWindow.ID? {
-      guard columns > 0,
-            let idx = hosts.firstIndex(of: host) else {
-        return nil
-      }
-      let row = idx / columns
-      // Lookup the last row containing a value in column
-      let column = idx % columns
-
-      // Compute index of the previous host
-      let belowIdx = (row + 1) * columns + column
-      if belowIdx >= hosts.endIndex {
-        return (column != idx) ? hosts[column] : nil
-      }
-      return hosts[belowIdx]
-    }
-
-    func getHostAfter(_ host: HostWindow.ID) -> HostWindow.ID? {
-      guard columns > 0,
-            let idx = hosts.firstIndex(of: host) else {
-        return nil
-      }
-      let column = idx % columns
-      // wrap around when reaching end of row
-      if column == columns - 1 || idx == hosts.endIndex - 1 {
-        return column > 0 ? hosts[idx - column] : nil
-      }
-      return hosts[idx + 1]
-    }
-
-    func getHostBefore(_ host: HostWindow.ID) -> HostWindow.ID? {
-      guard columns > 0,
-            let idx = hosts.firstIndex(of: host) else {
-        return nil
-      }
-      let column = idx % columns
-      // wrap around when reaching start of row
-      if column == 0 {
-        let wrapIdx = min(idx + columns - 1, hosts.endIndex - 1)
-        return (wrapIdx != idx) ? hosts[wrapIdx] : nil
-      }
-      return hosts[idx - 1]
-    }
-
-    private func getRow(_ host: HostWindow.ID) -> Int? {
-      guard columns > 0,
-            let idx = hosts.firstIndex(of: host) else {
-        return nil
-      }
-      return idx / columns
-    }
-
-    private func getColumn(_ host: HostWindow.ID) -> Int? {
-      guard columns > 0,
-            let idx = hosts.firstIndex(of: host) else {
-        return nil
-      }
-      return idx % columns
-    }
   }
 
   private var config: Config
 
   private var screens: [Screen]
+  private(set) var controllerScreen: Screen? = nil
 
   private var defaultWindowRatio: Double = 0
 
   init(config: Config) {
     self.config = config
-    // TODO: validate that user requested bounds is compatible with the screen bounds
 
-    screens = (try? Self.visibleFrames(screens: config.screens)) ?? []
-
-    // TODO: let the user specify controller screen, or try to infer it from controller window
-    if !screens.isEmpty {
-      screens[0].isControllerScreen = true
-    }
+    screens = NSScreen.screens.compactMap({ screen in
+      guard let uuid = screen._UUIDString() else { return nil }
+      return Screen(uuid: uuid, visibleFrame: screen.visibleFrame)
+    })
   }
 
   func rows(for screen: Int32) -> Int { return 0 }
@@ -144,6 +53,21 @@ struct WindowLayoutManager {
 
   func columns(for screen: Int32) -> Int { return 0 }
   func set(columns: Int, for screen: Int32) {}
+
+  private func screen(for frame: CGRect) -> Screen? {
+    var best: Screen? = nil
+    var bestScore: CGFloat = 0
+    for screen in screens {
+      let rect = screen.visibleFrame.intersection(frame)
+      guard !rect.isEmpty else { continue }
+      let score = rect.width * rect.height
+      if score > bestScore {
+        bestScore = score
+        best = screen
+      }
+    }
+    return best ?? screens.first(where: \.plugged)
+  }
 
   private func screen(for host: HostWindow.ID) -> Screen? {
     return screens.first { $0.hosts.contains(host) }
@@ -175,93 +99,79 @@ struct WindowLayoutManager {
   }
 
   mutating func layout(controller tab: Terminal.Tab, hosts: [HostWindow]) {
-    guard !screens.isEmpty else {
+    // TODO: refresh active screens based on configuration
+    screens.forEach { $0.active = $0.plugged }
+
+    guard screens.contains(where: { $0.plugged && $0.active }) else {
       logger.warning("failed to compute screen bounds. Skipping layout pass.")
       return
     }
 
     tab.window.miniaturized = false
 
-    // FIXME: find on which screen the controller currently is.
-    tab.window.frame = CGRect(origin: screens[0].bounds.origin,
-                              size: CGSize(width: screens[0].bounds.width, height: config.controllerHeight))
+    // find on which screen the controller currently is.
+    if let screen = screen(for: tab.window.frame) {
+      controllerScreen = screen
+      screen.updateFrame(reserved: config.controllerHeight)
+      tab.window.frame = CGRect(origin: screen.frame.origin,
+                                size: CGSize(width: screen.frame.width, height: config.controllerHeight))
+      // TODO: check resulting frame to make sure controllerHeight is respected.
+    }
 
-    // TODO: check set resulting frame ?
     guard !hosts.isEmpty else { return }
-
     layout(hosts: hosts, space: tab.space)
   }
 
   private mutating func layout(hosts: [HostWindow], space: Int32) {
     assert(!hosts.isEmpty)
-    assert(!screens.isEmpty)
+    let screens = screens.filter { $0.plugged && $0.active }
+    guard !screens.isEmpty else { return }
 
-    // TODO: create and save grid for selection handling.
+    // Update all screens frames before computing windows layouts
+    screens.forEach { if ($0.uuid != controllerScreen?.uuid) { $0.updateFrame(reserved: 0) } }
 
-    var hostsByScreen: [[HostWindow]] = []
-    // TODO: compute surface of each screen and split host windows proportionally.
-    let base = hosts.count / screens.count
-    let remainder = hosts.count % screens.count
-
-    var cursor = 0
-    for _ in 0..<remainder {
-      hostsByScreen.append(Array(hosts[cursor...(cursor + base)]))
-      cursor += base + 1
-    }
-    for _ in remainder..<screens.count {
-      hostsByScreen.append(Array(hosts[cursor..<(cursor + base)]))
-      cursor += base
+    // compute surface of each screen and split host windows proportionally.
+    var totalArea = screens.reduce(0.0) { area, screen in
+      return area + screen.area
     }
 
-    var first = true
-    for (idx, hosts) in hostsByScreen.enumerated() {
-      let (rows, columns) = getGrid(for: getHostsBounds(for: screens[idx]), hosts: hosts.count)
-      screens[idx].set(hosts: hosts.map { $0.id }, rows: rows, columns: columns)
+    var dispatched = 0
+    for screen in screens {
+      if dispatched < hosts.count {
+        // Compute count of hosts proportionally to the screen area.
+        let count = Int(ceil(CGFloat(hosts.count - dispatched) * (screen.area / totalArea)))
+        // Compute screen frame and grid layout
+        screen.set(hosts: hosts[dispatched..<(dispatched + count)].map(\.id),
+                   ratio: defaultWindowRatio)
 
-      if (first) {
-        // If main screen -> remove controller frame
-        layout(hosts: hosts, on: screens[idx], space: space)
-        first = false
+        totalArea -= screen.area
+        dispatched += count
+        assert(dispatched <= hosts.count)
       } else {
-        layout(hosts: hosts, on: screens[idx], space: space)
+        // Clear screen
+        screen.set(hosts: [], ratio: 1)
+        // disable the screen
+        screen.active = false
       }
     }
-  }
 
-  private func getHostsBounds(for screen: Screen) -> CGRect {
-    if (screen.isControllerScreen) {
-      // Remove space reserved for controller window from controller screen bounds
-      let (_, bounds) = screen.bounds.divided(atDistance: config.controllerHeight, from: .minYEdge)
-      return bounds
-    } else {
-      return screen.bounds
+    var hostsById = [HostWindow.ID:HostWindow]()
+    hosts.forEach { host in hostsById[host.id] = host }
+    for screen in screens {
+      layout(screen: screen, space: space, hosts: hostsById)
     }
   }
 
-  private mutating func getGrid(for bounds: CGRect, hosts count: Int) -> (Int, Int) {
-    if config.rows > 0 {
-      let rows = min(config.rows, count)
-      let columns = Int(ceil(Float(count) / Float(rows)))
-      return (rows, columns)
-    } else if config.columns > 0 {
-      let columns = min(config.columns, count)
-      let rows = Int(ceil(Float(count) / Float(columns)))
-      return (rows, columns)
-    } else if (defaultWindowRatio > 0) {
-      return getBestLayout(for: defaultWindowRatio, hosts: count, on: bounds)
-    }
-    return (0, 0)
-  }
-
-  // Compute number of rows
-  private mutating func layout(hosts: [HostWindow], on screen: Screen, space: Int32) {
+  private mutating func layout(screen: Screen, space: Int32, hosts: [HostWindow.ID:HostWindow]) {
     guard screen.rows > 0, screen.columns > 0 else { return }
 
-    let bounds = getHostsBounds(for: screen)
+    let bounds = screen.hostsFrame
     let width = bounds.width / CGFloat(screen.columns)
     let height = bounds.height / CGFloat(screen.rows)
 
-    for (idx, host) in hosts.enumerated() {
+    for (idx, hostId) in screen.hosts.enumerated() {
+      guard let host = hosts[hostId] else { return }
+
       let x = CGFloat(idx % screen.columns) * width
       let y = CGFloat(idx / screen.columns) * height
 
@@ -279,42 +189,199 @@ struct WindowLayoutManager {
     }
   }
 
-  private static func visibleFrames(screens: Array<Int>) throws -> [Screen] {
-    // Default to main screen (screen with the active window)
-    if (screens.isEmpty) {
-      guard let screen = NSScreen.main else {
-        throw POSIXError(.ENODEV)
-      }
-      return [Screen(id: ScreenId(rawValue: 0), bounds: screen.visibleFrame)]
-    }
-
-    let displays = NSScreen.screens
-    guard !displays.isEmpty else {
-      throw POSIXError(.ENODEV)
-    }
-
-    var used = Set<Int>()
-    var frames = [Screen]()
-    for idx in screens {
-      guard (1...displays.count).contains(idx) else {
-        logger.warning("screen number must be in range [1;\(displays.count)]")
-        continue
-      }
-      guard !used.contains(idx - 1) else {
-        continue
-      }
-      used.insert(idx - 1)
-      frames.append(Screen(id: ScreenId(rawValue: idx - 1), bounds: displays[idx - 1].visibleFrame))
-    }
-
-    guard !frames.isEmpty else {
-      // default to main screen (with fallback to primary screen)
-      return [Screen(id: ScreenId(rawValue: 0), bounds: (NSScreen.main ?? displays[0]).visibleFrame)]
-    }
-
-    // TODO: sort screen from left to right ?
-    return frames
-  }
+//  private static func visibleFrames(screens: Array<Int>) throws -> [Screen] {
+//    // Default to all screens
+//    if (screens.isEmpty) {
+//      return NSScreen.screens.enumerated().map({ idx, screen in
+//        Screen(id: ScreenId(rawValue: idx), bounds: screen.visibleFrame, maxBounds: screen.visibleFrame)
+//      })
+//    }
+//
+//    let displays = NSScreen.screens
+//    guard !displays.isEmpty else {
+//      throw POSIXError(.ENODEV)
+//    }
+//
+//    var used = Set<Int>()
+//    var frames = [Screen]()
+//    for idx in screens {
+//      guard (1...displays.count).contains(idx) else {
+//        logger.warning("screen number must be in range [1;\(displays.count)]")
+//        continue
+//      }
+//      guard !used.contains(idx - 1) else {
+//        continue
+//      }
+//      used.insert(idx - 1)
+//      frames.append(Screen(id: ScreenId(rawValue: idx - 1), bounds: displays[idx - 1].visibleFrame, maxBounds: displays[idx - 1].visibleFrame))
+//    }
+//
+//    guard !frames.isEmpty else {
+//      // default to main screen (with fallback to primary screen)
+//      let bounds = (NSScreen.main ?? displays[0]).visibleFrame
+//      return [Screen(id: ScreenId(rawValue: 0), bounds: bounds, maxBounds: bounds)]
+//    }
+//
+//    // TODO: sort screen from left to right ?
+//    return frames
+//  }
 }
+
+class Screen {
+  let uuid: String // screen UUID.
+  // Actual screen visible frame (fullscreen frame)
+  var visibleFrame: CGRect
+
+  fileprivate var plugged: Bool = true
+  fileprivate var active: Bool = false
+
+  // Configuration
+  var requestedRows: Int = 0
+  var requestedColumns: Int = 0
+  var requestedFrame: CGRect? // relative to screen frame bounds
+
+  // Computed layout
+  var frame: CGRect = CGRect.zero
+  fileprivate var reserved: CGFloat = 0
+
+  fileprivate var hostsFrame: CGRect {
+    if (reserved > 0) {
+      // Remove space reserved for controller window from screen frame
+      let (_, bounds) = frame.divided(atDistance: reserved, from: .minYEdge)
+      return bounds
+    } else {
+      return frame
+    }
+  }
+
+  fileprivate var hosts: [HostWindow.ID] = []
+
+  fileprivate var rows: Int = 0
+  fileprivate var columns: Int = 0
+
+  fileprivate init(uuid: String, visibleFrame frame: CGRect) {
+    self.uuid = uuid
+    self.visibleFrame = frame
+  }
+
+  // Layout pass
+  fileprivate func updateFrame(reserved: CGFloat) {
+    // TODO: compute frame based on requested frame
+    frame = visibleFrame
+    self.reserved = reserved
+  }
+
+  fileprivate func set(hosts: [HostWindow.ID], ratio: CGFloat) {
+    self.hosts = hosts
+
+    // Update Grid
+    if (!hosts.isEmpty) {
+      updateGrid(for: ratio)
+    } else {
+      rows = 0
+      columns = 0
+    }
+  }
+
+  private func updateGrid(for ratio: CGFloat) {
+    let count = hosts.count
+    if requestedRows > 0 {
+      rows = min(requestedRows, count)
+      columns = Int(ceil(Float(count) / Float(rows)))
+    } else if requestedColumns > 0 {
+      columns = min(requestedColumns, count)
+      rows = Int(ceil(Float(count) / Float(columns)))
+    } else if (ratio > 0) {
+      (rows, columns) = getBestLayout(for: ratio, hosts: count, on: frame.size)
+    } else {
+      rows = 0
+      columns = 0
+    }
+  }
+
+  fileprivate var area: CGFloat { frame.width * frame.height }
+
+  func getHostAbove(_ host: HostWindow.ID) -> HostWindow.ID? {
+    guard columns > 0,
+          let idx = hosts.firstIndex(of: host) else {
+      return nil
+    }
+    let row = idx / columns
+    // This is not the first row -> return host above
+    if row > 0 {
+      return hosts[idx - columns]
+    }
+
+    // Lookup the last row containing a value in column
+    let column = idx % columns
+    // Compute index of the host above
+    let wrapIdx = (rows - 1) * columns + column
+    if wrapIdx >= hosts.endIndex {
+      return (wrapIdx - columns) != idx ? hosts[wrapIdx - columns] : nil
+    }
+    return hosts[wrapIdx]
+  }
+
+  func getHostBelow(_ host: HostWindow.ID) -> HostWindow.ID? {
+    guard columns > 0,
+          let idx = hosts.firstIndex(of: host) else {
+      return nil
+    }
+    let row = idx / columns
+    // Lookup the last row containing a value in column
+    let column = idx % columns
+
+    // Compute index of the previous host
+    let belowIdx = (row + 1) * columns + column
+    if belowIdx >= hosts.endIndex {
+      return (column != idx) ? hosts[column] : nil
+    }
+    return hosts[belowIdx]
+  }
+
+  func getHostAfter(_ host: HostWindow.ID) -> HostWindow.ID? {
+    guard columns > 0,
+          let idx = hosts.firstIndex(of: host) else {
+      return nil
+    }
+    let column = idx % columns
+    // wrap around when reaching end of row
+    if column == columns - 1 || idx == hosts.endIndex - 1 {
+      return column > 0 ? hosts[idx - column] : nil
+    }
+    return hosts[idx + 1]
+  }
+
+  func getHostBefore(_ host: HostWindow.ID) -> HostWindow.ID? {
+    guard columns > 0,
+          let idx = hosts.firstIndex(of: host) else {
+      return nil
+    }
+    let column = idx % columns
+    // wrap around when reaching start of row
+    if column == 0 {
+      let wrapIdx = min(idx + columns - 1, hosts.endIndex - 1)
+      return (wrapIdx != idx) ? hosts[wrapIdx] : nil
+    }
+    return hosts[idx - 1]
+  }
+
+//  private func getRow(_ host: HostWindow.ID) -> Int? {
+//    guard columns > 0,
+//          let idx = hosts.firstIndex(of: host) else {
+//      return nil
+//    }
+//    return idx / columns
+//  }
+//
+//  private func getColumn(_ host: HostWindow.ID) -> Int? {
+//    guard columns > 0,
+//          let idx = hosts.firstIndex(of: host) else {
+//      return nil
+//    }
+//    return idx % columns
+//  }
+}
+
 
 
