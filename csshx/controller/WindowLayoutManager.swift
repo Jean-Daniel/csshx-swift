@@ -73,22 +73,6 @@ struct WindowLayoutManager {
     return screens.first { $0.hosts.contains(host) }
   }
 
-  func getHostAbove(_ host: HostWindow.ID) -> HostWindow.ID? {
-    return screen(for: host)?.getHostAbove(host)
-  }
-
-  func getHostBelow(_ host: HostWindow.ID) -> HostWindow.ID? {
-    return screen(for: host)?.getHostBelow(host)
-  }
-
-  func getHostAfter(_ host: HostWindow.ID) -> HostWindow.ID? {
-    return screen(for: host)?.getHostAfter(host)
-  }
-
-  func getHostBefore(_ host: HostWindow.ID) -> HostWindow.ID? {
-    return screen(for: host)?.getHostBefore(host)
-  }
-
   mutating func setDefaultWindowRatio(from tab: Terminal.Tab) {
     if (defaultWindowRatio <= 0) {
       let bounds = tab.frame
@@ -244,7 +228,7 @@ class Screen {
   var frame: CGRect = CGRect.zero
   fileprivate var reserved: CGFloat = 0
 
-  fileprivate var hostsFrame: CGRect {
+  var hostsFrame: CGRect {
     if (reserved > 0) {
       // Remove space reserved for controller window from screen frame
       let (_, bounds) = frame.divided(atDistance: reserved, from: .minYEdge)
@@ -380,22 +364,6 @@ class Screen {
     }
     return hosts[idx - 1]
   }
-
-//  private func getRow(_ host: HostWindow.ID) -> Int? {
-//    guard columns > 0,
-//          let idx = hosts.firstIndex(of: host) else {
-//      return nil
-//    }
-//    return idx / columns
-//  }
-//
-//  private func getColumn(_ host: HostWindow.ID) -> Int? {
-//    guard columns > 0,
-//          let idx = hosts.firstIndex(of: host) else {
-//      return nil
-//    }
-//    return idx % columns
-//  }
 }
 
 

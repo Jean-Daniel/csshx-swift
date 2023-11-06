@@ -407,20 +407,34 @@ extension InputMode {
   }
 }
 
+private extension Comparable {
+  func clamp(to range: Range<Self>) -> Self {
+    return Swift.max(range.lowerBound, Swift.min(range.upperBound, self))
+  }
+}
+
 private extension Controller {
   func move(screen: Screen, dx: Int, dy: Int) {
     if var frame = tab?.window.frame {
-      frame.origin.x += 10 * CGFloat(dx)
-      frame.origin.y += 10 * CGFloat(dy)
-      tab?.window.origin = frame.intersection(screen.visibleFrame).origin
+      let xRange = screen.visibleFrame.minX..<(screen.visibleFrame.maxX - frame.width)
+      frame.origin.x = (frame.origin.x + 10 * CGFloat(dx)).clamp(to: xRange)
+
+      let yRange = screen.visibleFrame.minY..<(screen.visibleFrame.maxY - frame.height)
+      frame.origin.y = (frame.origin.y + 10 * CGFloat(dy)).clamp(to: yRange)
+
+      tab?.window.origin = frame.origin
     }
   }
 
   func resize(screen: Screen, dx: Int, dy: Int) {
-    if var size = tab?.window.size {
-      size.x += 10 * CGFloat(dx)
-      size.y += 10 * CGFloat(dy)
-      tab?.window.size = size
+    if var frame = tab?.window.frame {
+      let xRange = 40..<(screen.visibleFrame.maxX - frame.minX)
+      frame.size.width = (frame.size.width + 10 * CGFloat(dx)).clamp(to: xRange)
+
+      let yRange = 40..<(screen.visibleFrame.maxY - frame.minY)
+      frame.size.height = (frame.size.height + 10 * CGFloat(dy)).clamp(to: yRange)
+
+      tab?.window.frame = frame
     }
   }
 }
@@ -516,7 +530,7 @@ extension InputMode {
       // hostname
       if "h" ~= input {
         ctrl.hosts.sort { h1, h2 in
-          // TODO: sort by port and username of hostname is not enough
+          // TODO: sort by port and username ?
           h1.host.hostname < h2.host.hostname
         }
         ctrl.layout()
@@ -557,6 +571,8 @@ extension InputMode {
 
     var raw: Bool { true }
 
+    private var screen: Screen? = nil
+
     var selection: HostWindow? = nil {
       didSet {
         oldValue?.selected = false
@@ -573,13 +589,16 @@ extension InputMode {
       ctrl.hosts.forEach { $0.tab.window.zoomed = false }
       // select first host window
       selection = ctrl.hosts.first
+
+      // default to controller screen
+      screen = ctrl.windowManager.controllerScreen
     }
 
     mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
       // ↑
       if "i" ~= input || "\u{1b}[A" ~= input {
         if let selected = selection,
-           let next = ctrl.windowManager.getHostAbove(selected.id).flatMap({ hid in
+           let next = screen?.getHostAbove(selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
            }) {
           selection = next
@@ -588,7 +607,7 @@ extension InputMode {
       // ↓
       else if "k" ~= input || "\u{1b}[B" ~= input {
         if let selected = selection,
-           let next = ctrl.windowManager.getHostBelow(selected.id).flatMap({ hid in
+           let next = screen?.getHostBelow(selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
            }) {
           selection = next
@@ -597,7 +616,7 @@ extension InputMode {
       // →
       else if "l" ~= input || "\u{1b}[C" ~= input {
         if let selected = selection,
-           let next = ctrl.windowManager.getHostAfter(selected.id).flatMap({ hid in
+           let next = screen?.getHostAfter(selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
            }) {
           selection = next
@@ -606,7 +625,7 @@ extension InputMode {
       // ←
       else if "j" ~= input || "\u{1b}[D" ~= input {
         if let selected = selection,
-           let next = ctrl.windowManager.getHostBefore(selected.id).flatMap({ hid in
+           let next = screen?.getHostBefore(selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
            }) {
           selection = next
@@ -650,8 +669,15 @@ extension InputMode {
             }
             $0.selected = false
           }
-          // TODO: zoom
+          // zoom
+          if let frame = screen?.hostsFrame {
+            selected.tab.window.frame = frame
+          }
           selected.enabled = true
+          // bring it front
+          selected.tab.window.frontmost = true
+          // but still behind controller window
+          ctrl.tab?.window.frontmost = true
           return InputMode.Input()
         }
       }
