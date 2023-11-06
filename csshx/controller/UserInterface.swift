@@ -279,7 +279,7 @@ extension InputMode {
       "(Also Arrow keys of h,j,k,l can move window, hold Ctrl to resize)\r\n" +
       "[r]eset to default, [f]ull screen, [p]rint current bounds"
     }
-    
+
     mutating func onEnable(_ ctrl: Controller) throws {
       // hide all host windows
       ctrl.hosts.forEach { $0.tab.hide() }
@@ -295,46 +295,50 @@ extension InputMode {
       // resize master to match "layout manager" bounds
       screen = ctrl.windowManager.controllerScreen
       if let screen, !screen.frame.isEmpty {
-        // FIXME: screen.frame does not include controller frame
         ctrl.tab?.window.frame = screen.frame
       }
     }
 
     mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
+      guard let screen = screen else {
+        // TODO: exit bounds mode ?
+        return nil
+      }
+
       // ↑
       if "i" ~= input || "\u{1b}[A" ~= input {
-        ctrl.move(dx: 0, dy: 1)
+        ctrl.move(screen: screen, dx: 0, dy: 1)
       }
       // shift ↑
-      else if "\u{1b}[1;2A" ~= input {
-
+      else if "I" ~= input || "\u{1b}[1;2A" ~= input {
+        ctrl.resize(screen: screen, dx: 0, dy: 1)
       }
 
       // ↓
       else if "k" ~= input || "\u{1b}[B" ~= input {
-        ctrl.move(dx: 0, dy: -1)
+        ctrl.move(screen: screen, dx: 0, dy: -1)
       }
       // shift ↓
-      else if "\u{1b}[1;2B" ~= input {
-
+      else if "K" ~= input || "\u{1b}[1;2B" ~= input {
+        ctrl.resize(screen: screen, dx: 0, dy: -1)
       }
 
       // →
       else if "l" ~= input || "\u{1b}[C" ~= input {
-        ctrl.move(dx: 1, dy: 0)
+        ctrl.move(screen: screen, dx: 1, dy: 0)
       }
       // shift →
-      else if "\u{1b}[1;2C" ~= input {
-
+      else if "L" ~= input || "\u{1b}[1;2C" ~= input {
+        ctrl.resize(screen: screen, dx: 1, dy: 0)
       }
 
       // ←
       else if "j" ~= input || "\u{1b}[D" ~= input {
-        ctrl.move(dx: -1, dy: 0)
+        ctrl.move(screen: screen, dx: -1, dy: 0)
       }
       // shift ←
-      else if "\u{1b}[1;2D" ~= input {
-
+      else if "J" ~= input || "\u{1b}[1;2D" ~= input {
+        ctrl.resize(screen: screen, dx: -1, dy: 0)
       }
 
       // print bounds
@@ -348,9 +352,19 @@ extension InputMode {
 
       // full screen
       else if "f" ~= input {
-        if let screen, !screen.visibleFrame.isEmpty {
+        if !screen.visibleFrame.isEmpty {
           ctrl.tab?.window.frame = screen.visibleFrame
         }
+      }
+
+      // apply
+      else if "\r" ~= input {
+        if let frame = ctrl.tab?.frame {
+          screen.setRequestFrame(frame, isRelative: false)
+        }
+        ctrl.setControllerColors()
+        ctrl.layout()
+        return InputMode.Input()
       }
 
       else if 0x1b ~= input {
@@ -394,11 +408,19 @@ extension InputMode {
 }
 
 private extension Controller {
-  func move(dx: Int, dy: Int) {
-    if var origin = tab?.window.origin {
-      origin.x += 10 * CGFloat(dx)
-      origin.y += 10 * CGFloat(dy)
-      tab?.window.origin = origin
+  func move(screen: Screen, dx: Int, dy: Int) {
+    if var frame = tab?.window.frame {
+      frame.origin.x += 10 * CGFloat(dx)
+      frame.origin.y += 10 * CGFloat(dy)
+      tab?.window.origin = frame.intersection(screen.visibleFrame).origin
+    }
+  }
+
+  func resize(screen: Screen, dx: Int, dy: Int) {
+    if var size = tab?.window.size {
+      size.x += 10 * CGFloat(dx)
+      size.y += 10 * CGFloat(dy)
+      tab?.window.size = size
     }
   }
 }

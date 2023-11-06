@@ -102,14 +102,28 @@ func getBestLayout(for ratio: Double, hosts: Int, on screen: CGSize) -> (Int, In
     }
   }
 
-  for rows in 1...Int(ceil(Float(hosts).squareRoot())) {
-    // For each rows x columns
-    let columns = Int(ceil(Float(hosts) / Float(rows)))
-    // Test both horizontal and vertical layout
-    testRatio(rows: rows, columns: columns)
-    if rows != columns {
-      testRatio(rows: columns, columns: rows)
-    }
+  switch hosts {
+    case 0:
+      return (0, 0)
+    case 1:
+      return (1, 1)
+    case 2:
+      testRatio(rows: 1, columns: 2)
+      testRatio(rows: 2, columns: 1)
+    case 3:
+      // Special case for 3 to avoid wasting 1/4 of the screen space (2x2 layout)
+      testRatio(rows: 1, columns: 3)
+      testRatio(rows: 3, columns: 1)
+    default:
+      for rows in 1...Int(ceil(Float(hosts).squareRoot())) {
+        // For each rows x columns
+        let columns = Int(ceil(Float(hosts) / Float(rows)))
+        // Test both horizontal and vertical layout
+        testRatio(rows: rows, columns: columns)
+        if rows != columns {
+          testRatio(rows: columns, columns: rows)
+        }
+      }
   }
 
   return (bestRowCount, bestColumnCount)

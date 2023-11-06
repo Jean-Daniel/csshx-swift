@@ -89,12 +89,12 @@ extension Terminal {
       }
     }
 
-    func tty() -> dev_t {
+    var tty: dev_t {
       return tab.ttydev()
     }
     
     // MARK: Window Management
-    func frame() -> CGRect {
+    var frame: CGRect {
       return window.frame
     }
 

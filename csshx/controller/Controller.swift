@@ -55,10 +55,11 @@ class Controller {
     // if mode changed and buffer is not empty -> reparse
     while (!buffer.isEmpty) {
       do {
+        let count = buffer.count
         if let mode = try inputMode.parse(input: &buffer, self) {
           try setInputMode(mode)
-        } else {
-          // No mode change -> needs more data, exit the loop
+        } else if (buffer.count == count) {
+          // No mode change and not data consumed -> needs more data, exit the loop
           break
         }
       } catch {
@@ -246,7 +247,7 @@ extension Controller {
     // the tab profile rows/columns count, as the row/columns size ratio depends the used font.
     windowManager.setDefaultWindowRatio(from: tab)
 
-    let tty = tab.tty()
+    let tty = tab.tty
     guard tty > 0 else {
       throw ScriptingBridgeError()
     }

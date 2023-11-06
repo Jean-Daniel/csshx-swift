@@ -91,7 +91,7 @@ struct WindowLayoutManager {
 
   mutating func setDefaultWindowRatio(from tab: Terminal.Tab) {
     if (defaultWindowRatio <= 0) {
-      let bounds = tab.frame()
+      let bounds = tab.frame
       if (!bounds.isEmpty) {
         defaultWindowRatio =  bounds.width / bounds.height
       }
@@ -238,7 +238,7 @@ class Screen {
   // Configuration
   var requestedRows: Int = 0
   var requestedColumns: Int = 0
-  var requestedFrame: CGRect? // relative to screen frame bounds
+  private(set) var requestedFrame: CGRect? // relative to screen frame
 
   // Computed layout
   var frame: CGRect = CGRect.zero
@@ -264,10 +264,25 @@ class Screen {
     self.visibleFrame = frame
   }
 
+  func setRequestFrame(_ frame: CGRect, isRelative: Bool) {
+    if (isRelative) {
+      requestedFrame = frame
+    } else {
+      let screen = visibleFrame
+      requestedFrame = frame.offsetBy(dx: -screen.origin.x, dy: -screen.origin.y)
+    }
+  }
+
   // Layout pass
   fileprivate func updateFrame(reserved: CGFloat) {
-    // TODO: compute frame based on requested frame
-    frame = visibleFrame
+    if let requested = requestedFrame {
+      frame = requested.offsetBy(dx: visibleFrame.origin.x, dy: visibleFrame.origin.y)
+      // Clip to visible frame
+      frame = frame.intersection(visibleFrame)
+    } else {
+      frame = visibleFrame
+    }
+
     self.reserved = reserved
   }
 
