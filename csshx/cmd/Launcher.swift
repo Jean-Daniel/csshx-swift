@@ -69,6 +69,10 @@ extension Csshx {
       }
 
       // Install signal handler before stating master
+
+      // Note: DispatchSourceSignal is based on kevent, and is independent of signal()/sigaction().
+      // The SIGUSR1 must be disabled in 'signal' to avoid process death when receiving it.
+      Darwin.signal(SIGUSR1, SIG_IGN)
       waitFor(signal: SIGUSR1, timeout: .seconds(10)) { timeout in
         if (timeout) {
           logger.debug("master starting timeout")
