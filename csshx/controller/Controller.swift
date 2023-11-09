@@ -272,6 +272,9 @@ extension Controller {
       args.append("--port")
       args.append(String(port))
     }
+    if settings.dummy {
+      args.append("--dummy")
+    }
     // TODO: ssh args and remote command
 
     do {

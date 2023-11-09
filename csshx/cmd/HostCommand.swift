@@ -28,6 +28,7 @@ extension Csshx {
     }
 
     @OptionGroup var options: Options
+    @Flag(help: .private) var dummy: Bool = false
 
     func run() throws {
       // First, connect to the socket (no need to try to launch ssh if connection fails)
@@ -35,14 +36,22 @@ extension Csshx {
       let client = try SSHWrapper(socket: options.socket)
 
       // Then starts SSH
-      try client.start(options: options)
+      if !dummy {
+        try client.start(options: options)
+      } else {
+        print("hostname: \(options.hostname)")
+      }
 
       // Start listening for incoming data from master
       client.connection.read { data in
         for c in data {
           withUnsafePointer(to: c) { ptr in
             do {
-              try Bridge.tiocsti(c)
+              if !dummy {
+                try Bridge.tiocsti(c)
+              } else {
+                // noop
+              }
             } catch {
               logger.error("tiocsti failed with error: \(error)")
               client.close()
@@ -57,14 +66,16 @@ extension Csshx {
         client.close()
       }
 
-      // If ssh exit, terminating
-      waitFor(pid: client.pid) { result in
-        if result != 0 {
-          logger.info("ssh exit with status \(result)")
-        } else {
-          logger.info("ssh exit")
+      if !dummy {
+        // If ssh exit, terminating
+        waitFor(pid: client.pid) { result in
+          if result != 0 {
+            logger.info("ssh exit with status \(result)")
+          } else {
+            logger.info("ssh exit")
+          }
+          client.close()
         }
-        client.close()
       }
     }
   }

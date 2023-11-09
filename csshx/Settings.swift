@@ -245,6 +245,7 @@ struct EscapeSequence: ExpressibleByStringArgument {
 // MARK: - Settings
 struct Settings {
 
+  var dummy: Bool = false
   // Windows Layout
   var space: Int32 = -1
 

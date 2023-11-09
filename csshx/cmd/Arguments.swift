@@ -193,8 +193,11 @@ struct Config: ParsableArguments {
                          """))
   var debug: Bool = false
 
+  @Flag(help: .private) var dummy: Bool = false
+
   func override(_ settings: inout Settings) {
     if let socket { settings.socket = socket }
     settings.debug = settings.debug || debug
+    settings.dummy = settings.dummy || dummy
   }
 }
