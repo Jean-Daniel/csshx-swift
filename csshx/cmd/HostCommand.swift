@@ -77,6 +77,8 @@ extension Csshx {
           client.close()
         }
       }
+
+      dispatchMain()
     }
   }
 }

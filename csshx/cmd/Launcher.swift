@@ -104,7 +104,7 @@ extension Csshx {
       // Once master is ready, we are done.
       // TODO: if implementing ping test, maybe it should be done by the launcher
       //   and result forwarded to the master though the master socket.
-
+      dispatchMain()
     }
   }
 }

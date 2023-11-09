@@ -112,6 +112,9 @@ extension Csshx {
       // for await _ in DispatchSource.signals(SIGWINCH) {
       //   await ctrl.setNeedsRedraw()
       // }
+
+      // required to get display change notifications
+      NSApplication.shared.run()
     }
   }
 }

@@ -43,7 +43,6 @@ extension ParsableCommand {
     do {
       var command = try parseAsRoot(arguments)
       try command.run()
-      dispatchMain()
     } catch {
       exit(withError: error)
     }
