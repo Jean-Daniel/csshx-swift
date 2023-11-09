@@ -110,6 +110,22 @@ final class HostListTests: XCTestCase {
     XCTAssertNoThrow(try hosts.getHosts(limit: 128))
     XCTAssertThrowsError(try hosts.getHosts(limit: 127))
   }
+
+  func testRecursiveClusterExpansion() throws {
+    var hosts = HostList()
+    hosts.add("workers-[a-b]", to: "workers")
+    hosts.add("worker-[1-3].cluster", to: "workers-a")
+    hosts.add("worker-[4-6].cluster", to: "workers-b")
+    try hosts.add("workers+2", command: nil)
+
+    let targets = NSCountedSet(array: try hosts.getHosts().map { $0.hostname })
+    // count returns the number of unique keys
+    XCTAssertEqual(6, targets.count)
+
+    for idx in 1...6 {
+      XCTAssertEqual(2, targets.count(for: "worker-\(idx).cluster"))
+    }
+  }
 }
 
 private extension Array<Target> {
@@ -118,4 +134,3 @@ private extension Array<Target> {
     return contains { $0.hostname == hostname && ($0.port ?? 0) == port }
   }
 }
-

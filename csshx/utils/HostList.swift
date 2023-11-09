@@ -61,14 +61,6 @@ struct HostList {
   func getHosts(limit: Int = 2048) throws -> [Target] {
     var resolved = [Target]()
     for host in hosts {
-      if let clusterHosts = clusters[host.hostname] {
-        logger.debug("Expand cluster: \(host.hostname) => \(clusterHosts)\n")
-        // add cluster host (expanding them if needed)
-        for host in clusterHosts {
-          try expands(HostSpec(host: host, command: nil), limit: limit, into: &resolved)
-        }
-        continue
-      }
       try expands(host, limit: limit, into: &resolved)
     }
     return resolved
@@ -86,7 +78,7 @@ struct HostList {
   private func expands(_ host: HostSpec, limit: Int, into: inout [Target]) throws {
     // 192.168.0.1+3
 
-    // Check for repeat pattern
+    // Then, check for repeat pattern
     if let match = host.hostname.wholeMatch(of: Self.repeatPattern) {
       // expand single entry, and then repeat
       let count = match.output.2
@@ -114,8 +106,19 @@ struct HostList {
     // 192.168.0.[0-20,13]
     // 192.168.[0-2].[255,254]
     // 192.168.[0-2].0/24
-    
-    // First, expand all ranges in the hostname.
+
+    // Try cluster expansion
+    if let clusterHosts = clusters[host.hostname] {
+      logger.debug("Expand cluster: \(host.hostname) => \(clusterHosts)\n")
+      // add cluster host (expanding them if needed)
+      for host in clusterHosts {
+        // supports repeat expansion in cluster expansion -> call to expands (and not _expands)
+        try expands(HostSpec(host: host, command: nil), limit: limit, into: &into)
+      }
+      return
+    }
+
+    // Expand all ranges in the hostname.
     if let match = host.hostname.wholeMatch(of: /(.*)\[(.*)\](.*)/.repetitionBehavior(.reluctant)) {
       let prefix = match.output.1
       let suffix = match.output.3
