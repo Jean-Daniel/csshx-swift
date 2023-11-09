@@ -241,11 +241,14 @@ extension Terminal.Tab {
     //      'want':'cwin', 'form':'ID  ', 'seld':23600, 'from':[0x0,f0ef0e "Terminal"]
     //    }
     //  }
-    // FIXME: check the 'form' of each specifier
     guard let specifier = tab.qualifiedSpecifier(),
+          // Make sure this is an idx specifier
+          specifier.forKeyword(AEKeyword(keyAEKeyForm))?.typeCodeValue ?? 0 == formAbsolutePosition,
           let tabIdx = specifier.forKeyword(AEKeyword(keyAEKeyData))?.int32Value,
           // Get the 'from' property which is a Window object specifier
           let windowSpec = specifier.forKeyword(AEKeyword(keyAEContainer)),
+          // Make sure this is a 'ID  ' specifier
+          windowSpec.forKeyword(AEKeyword(keyAEKeyForm))?.typeCodeValue ?? 0 == formUniqueID,
           // Get the specifier key which is the window 'ID  '
           let windowId = windowSpec.forKeyword(AEKeyword(keyAEKeyData)),
           // And finally, create a TabWindow representing the tab's window.
