@@ -14,7 +14,7 @@ extension FilePath {
     var err: Error? = nil
     let content: String
     do {
-      content = try String(contentsOfFile: string)
+      content = try String(contentsOfFile: (string as NSString).expandingTildeInPath)
     } catch CocoaError.fileReadNoSuchFile {
       return
     } catch {
