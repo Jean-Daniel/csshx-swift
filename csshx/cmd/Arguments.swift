@@ -1,8 +1,8 @@
 //
-//  Config.swift
+//  Arguments.swift
 //  csshx
 //
-//  Created by Jean-Daniel Dupas on 06/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 import ArgumentParser

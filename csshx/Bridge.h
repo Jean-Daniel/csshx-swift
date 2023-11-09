@@ -2,7 +2,7 @@
 //  Bridge.h
 //  csshx
 //
-//  Created by Jean-Daniel Dupas on 12/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 #ifndef Bridge_h
@@ -19,8 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (dev_t)getProcessTTY:(pid_t)pid;
 
-+ (BOOL)setNonBlocking:(dispatch_fd_t)fd error:(NSError ** _Nullable)error;
-
 + (dispatch_fd_t)bind:(NSString *)path umask:(mode_t)perm error:(NSError ** _Nullable)error __attribute__((swift_error(zero_result)));
 
 + (dispatch_fd_t)connect:(NSString *)path error:(NSError ** _Nullable)error __attribute__((swift_error(zero_result)));
@@ -28,10 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 // SPI
-@interface NSScreen (UUID)
+@interface NSScreen (SPI)
 
 // May be implemented using
 // CGDisplayCreateUUIDFromDisplayID([[[screen deviceDescription] objectForKey:@"NSScreenNumber"] unsignedLongValue])
+// but is less reliable, as it may returns nil during reconfiguration while NSScreen returns a cached value.
 - (NSString * _Nullable)_UUIDString;
 + (NSScreen  * _Nullable)_screenForUUIDString:(NSString *)uuid;
 

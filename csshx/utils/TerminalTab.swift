@@ -1,8 +1,8 @@
 //
-//  Window.swift
+//  TerminalTab.swift
 //  csshx
 //
-//  Created by Jean-Daniel Dupas on 10/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 import Foundation
@@ -243,11 +243,11 @@ extension Terminal.Tab {
     //  }
     // FIXME: check the 'form' of each specifier
     guard let specifier = tab.qualifiedSpecifier(),
-          let tabIdx = specifier.forKeyword(kSeldProperty)?.int32Value,
+          let tabIdx = specifier.forKeyword(AEKeyword(keyAEKeyData))?.int32Value,
           // Get the 'from' property which is a Window object specifier
-          let windowSpec = specifier.forKeyword(kFromProperty),
+          let windowSpec = specifier.forKeyword(AEKeyword(keyAEContainer)),
           // Get the specifier key which is the window 'ID  '
-          let windowId = windowSpec.forKeyword(kSeldProperty),
+          let windowId = windowSpec.forKeyword(AEKeyword(keyAEKeyData)),
           // And finally, create a TabWindow representing the tab's window.
           let window = terminal.windows().object(withID: windowId.int32Value) as? TerminalWindow
     else {
@@ -275,7 +275,7 @@ extension TerminalTab {
 
   func index() throws -> Int {
     guard let specifier = qualifiedSpecifier(),
-          let tabIdx = specifier.forKeyword(kSeldProperty)?.int32Value else {
+          let tabIdx = specifier.forKeyword(AEKeyword(keyAEKeyData))?.int32Value else {
       throw ScriptingBridgeError()
     }
     return Int(tabIdx)

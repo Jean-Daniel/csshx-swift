@@ -2,7 +2,7 @@
 //  Launcher.swift
 //  csshx
 //
-//  Created by Jean-Daniel Dupas on 10/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 import ArgumentParser

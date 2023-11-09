@@ -2,7 +2,7 @@
 //  LayoutManager.swift
 //  csshx-tests
 //
-//  Created by Jean-Daniel Dupas on 28/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 import XCTest

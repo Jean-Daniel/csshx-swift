@@ -2,7 +2,7 @@
 //  Terminal+AEDesc.m
 //  csshx
 //
-//  Created by Jean-Daniel Dupas on 24/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 #import "Terminal+AEDesc.h"
@@ -23,7 +23,7 @@ static OSStatus GetTabWhoseTTYEquals(const char *ttyname, AEDesc *test) {
   WBAECreatePropertyObjectSpecifier(cProperty, 'ttty', &this, &obj1);
   WBAEDisposeDesc(&this);
 
-  // utxt(/dev/<tty>)
+  // true(/dev/<tty>)
   AEDesc obj2 = WBAEEmptyDesc();
   err = WBAECreateDescFromString((__bridge CFStringRef)[NSString stringWithFormat:@"/dev/%s", ttyname], &obj2);
   if (noErr != err) {
@@ -35,7 +35,8 @@ static OSStatus GetTabWhoseTTYEquals(const char *ttyname, AEDesc *test) {
   return CreateCompDescriptor(kAEEquals, &obj1, &obj2, true, test);
 }
 
-static OSStatus GetWindowsWithNonEmptyName(AEDesc *windows) {
+// windows whose resizable is true
+static OSStatus GetResizableWindows(AEDesc *windows) {
   if (!windows)
     return paramErr;
 
@@ -45,12 +46,12 @@ static OSStatus GetWindowsWithNonEmptyName(AEDesc *windows) {
 
   // property name from the examined object
   AEDesc obj1 = WBAEEmptyDesc();
-  WBAECreatePropertyObjectSpecifier(cProperty, keyAEName, &this, &obj1);
+  WBAECreatePropertyObjectSpecifier(cProperty, pIsResizable, &this, &obj1);
   WBAEDisposeDesc(&this);
 
-  // utxt("")
+  // true(0/$)
   AEDesc obj2 = WBAEEmptyDesc();
-  err = WBAECreateDescFromString(CFSTR(""), &obj2);
+  err = AECreateDesc(typeTrue, nil, 0, &obj2);
   if (noErr != err) {
     WBAEDisposeDesc(&obj1);
     return err;
@@ -60,15 +61,10 @@ static OSStatus GetWindowsWithNonEmptyName(AEDesc *windows) {
   AEDesc equals = WBAEEmptyDesc();
   err = CreateCompDescriptor(kAEEquals, &obj1, &obj2, true, &equals);
 
-  AEDesc list = WBAEEmptyDesc();
-  err = WBAEDescListCreate(&list, &equals, nil);
-  WBAEDisposeDesc(&equals);
-
-  AEDesc not = WBAEEmptyDesc();
-  err = CreateLogicalDescriptor(&list, kAENOT, true, &not);
-
-  err = WBAECreateObjectSpecifier(cWindow, formTest, &not, NULL, windows);
-  WBAEDisposeDesc(&not);
+  if (noErr == err) {
+    err = WBAECreateObjectSpecifier(cWindow, formTest, &equals, NULL, windows);
+    WBAEDisposeDesc(&equals);
+  }
   return err;
 }
 
@@ -86,13 +82,13 @@ static OSStatus GetWindowsWithNonEmptyName(AEDesc *windows) {
   // Some Terminal version have a bug where it creates an invisible window that is returned in the window list.
   // That window is a special window that does not supports tab, and so any acces to the windows'tab raise an exception
   // and make the apple event handling failing with a -10000 error.
-  // Fortunately, that window is the only one having an empty name, so can be filtered out
+  // Fortunately, that window is the only one that is not closeable/resizable, so can be filtered out.
   AEDesc windows = WBAEEmptyDesc();
 #if 0
   // all windows (from current application)
   err = WBAECreateIndexObjectSpecifier(cWindow, kAEAll, NULL, &windows);
 #else
-  err = GetWindowsWithNonEmptyName(&windows);
+  err = GetResizableWindows(&windows);
 #endif
 
   // tabs from all windows whose "test"
@@ -102,16 +98,23 @@ static OSStatus GetWindowsWithNonEmptyName(AEDesc *windows) {
   WBAEDisposeDesc(&test);
 
   // using self to send to event to benefit from ScriptingBridge coerce behavior (-> creates TerminalTab instance)
-  // returns an array of array with a single tab.
-  id result = [self sendEvent:kAECoreSuite id:kAEGetData
-                   parameters:keyDirectObject, [[NSAppleEventDescriptor alloc] initWithAEDescNoCopy:&tab], 0];
+  // returns an array of matching tabs for each window. Only one array is not empty
+  NSArray *result = [self sendEvent:kAECoreSuite id:kAEGetData
+                         parameters:keyDirectObject, [[NSAppleEventDescriptor alloc] initWithAEDescNoCopy:&tab], 0];
 
-  while ([result isKindOfClass:NSArray.class] && [result count] == 1) {
-    result = result[0];
+  if (![result isKindOfClass:NSArray.class])
+    return nil;
+
+  // Lookup the found tab.
+  for (NSArray *tabs in result) {
+    if (![tabs isKindOfClass:NSArray.class] || [tabs count] == 0)
+      continue;
+
+    for (id tab in tabs) {
+      if ([tab isKindOfClass:TerminalTab.class])
+        return tab;
+    }
   }
-  // Make sure it has the right type
-  if ([result isKindOfClass:TerminalTab.class])
-    return result;
 
   return nil;
 }

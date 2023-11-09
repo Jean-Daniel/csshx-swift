@@ -2,7 +2,7 @@
 //  Socket.swift
 //  csshx
 //
-//  Created by Jean-Daniel Dupas on 12/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 import Foundation
@@ -49,13 +49,7 @@ class IOListener {
       if (client_fd < 0) {
         handler(Result.failure(POSIXError.errno))
       } else {
-        do {
-          try Bridge.setNonBlocking(client_fd)
-          handler(Result.success(client_fd))
-        } catch {
-          Darwin.close(client_fd)
-          logger.warning("client connection setup failed with error: \(error)")
-        }
+        handler(Result.success(client_fd))
       }
     }
     source.setCancelHandler {
@@ -68,7 +62,7 @@ class IOListener {
 
 extension IOListener {
   static func listen(socket: String) throws -> IOListener {
-    let fd = try Bridge.bind(socket, umask: 0o700)
+    let fd = try Bridge.bind(socket, umask: 0o077)
     if Darwin.listen(fd, 256) != 0 {
       throw POSIXError.errno
     }

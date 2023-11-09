@@ -7,6 +7,3 @@
 #import "CGSPrivate.h"
 #import "Terminal+AEDesc.h"
 
-static const AEKeyword kFromProperty = 'from';
-static const AEKeyword kSeldProperty = 'seld';
-

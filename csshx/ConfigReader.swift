@@ -2,19 +2,13 @@
 //  ConfigReader.swift
 //  csshx
 //
-//  Created by Jean-Daniel Dupas on 14/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 import Foundation
 import System
 import RegexBuilder
 
-// Host parsing:
-// 1. Create a list of target from host files, and arguments.
-// 2. Expands/Resolve hosts by:
-//   - looking up if the host is a cluster.
-//   - trying to expand the hostname if this is an hostname template.
-//   - else assume this is an hostname and insert is as is.
 
 extension Settings {
 

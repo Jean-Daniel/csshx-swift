@@ -2,7 +2,7 @@
 //  csshx.swift
 //  csshx
 //
-//  Created by Jean-Daniel Dupas on 03/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 import ArgumentParser

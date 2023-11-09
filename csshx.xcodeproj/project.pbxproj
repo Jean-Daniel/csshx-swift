@@ -21,7 +21,7 @@
 		1B5F94BA2AE6FE7300F7D3B4 /* WindowLayoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B5F94B92AE6FE7300F7D3B4 /* WindowLayoutManager.swift */; };
 		1B71D8B72AD764D0005CC0FE /* HostCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B71D8B62AD764D0005CC0FE /* HostCommand.swift */; };
 		1B71D8B92AD76535005CC0FE /* Misc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B71D8B82AD76535005CC0FE /* Misc.swift */; };
-		1B7FA1062AE84EC900F447F4 /* WBAEFunctions.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1B7FA1052AE84EC900F447F4 /* WBAEFunctions.mm */; };
+		1B7FA1062AE84EC900F447F4 /* WBAEFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B7FA1052AE84EC900F447F4 /* WBAEFunctions.m */; };
 		1B7FA1072AE8531100F447F4 /* Terminal+AEDesc.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B5F94BC2AE7A4D900F7D3B4 /* Terminal+AEDesc.m */; };
 		1B8A64A42ADB31440008DA98 /* ConfigReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8A64A32ADB31440008DA98 /* ConfigReader.swift */; };
 		1B8E5DBE2AD5BE4700263910 /* Terminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8E5DBD2AD5BE4700263910 /* Terminal.swift */; };
@@ -76,7 +76,7 @@
 		1B71D8B62AD764D0005CC0FE /* HostCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostCommand.swift; sourceTree = "<group>"; };
 		1B71D8B82AD76535005CC0FE /* Misc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Misc.swift; sourceTree = "<group>"; };
 		1B7FA1042AE84EC900F447F4 /* WBAEFunctions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WBAEFunctions.h; sourceTree = "<group>"; };
-		1B7FA1052AE84EC900F447F4 /* WBAEFunctions.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = WBAEFunctions.mm; sourceTree = "<group>"; };
+		1B7FA1052AE84EC900F447F4 /* WBAEFunctions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WBAEFunctions.m; sourceTree = "<group>"; };
 		1B8A64A32ADB31440008DA98 /* ConfigReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigReader.swift; sourceTree = "<group>"; };
 		1B8E5DBD2AD5BE4700263910 /* Terminal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Terminal.swift; sourceTree = "<group>"; };
 		1B8E5DBF2AD5EAAF00263910 /* TerminalTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalTab.swift; sourceTree = "<group>"; };
@@ -191,13 +191,13 @@
 				1B1E7FDA2ACCA2E6009BA975 /* Csshx.swift */,
 				1B4245812AD4952700137DD8 /* Settings.swift */,
 				1B8A64A32ADB31440008DA98 /* ConfigReader.swift */,
-				1B8E5DC22AD6018300263910 /* CGSPrivate.h */,
 				1B1840CB2AD59C3E00A6335B /* Terminal.h */,
+				1B1840CC2AD59CBB00A6335B /* Terminal.m */,
 				1B5F44022AD8A3D5003045E6 /* Bridge.h */,
 				1B5F44002AD8A076003045E6 /* Bridge.m */,
-				1B1840CC2AD59CBB00A6335B /* Terminal.m */,
+				1B8E5DC22AD6018300263910 /* CGSPrivate.h */,
 				1B7FA1042AE84EC900F447F4 /* WBAEFunctions.h */,
-				1B7FA1052AE84EC900F447F4 /* WBAEFunctions.mm */,
+				1B7FA1052AE84EC900F447F4 /* WBAEFunctions.m */,
 				1B5F94BB2AE7A4D900F7D3B4 /* Terminal+AEDesc.h */,
 				1B5F94BC2AE7A4D900F7D3B4 /* Terminal+AEDesc.m */,
 				1B1840C62AD59BD500A6335B /* csshx-Bridging-Header.h */,
@@ -317,7 +317,7 @@
 				1B8E5DC02AD5EAAF00263910 /* TerminalTab.swift in Sources */,
 				1B5F44012AD8A076003045E6 /* Bridge.m in Sources */,
 				1BC523392ADDAEC200FF4FEC /* HostList.swift in Sources */,
-				1B7FA1062AE84EC900F447F4 /* WBAEFunctions.mm in Sources */,
+				1B7FA1062AE84EC900F447F4 /* WBAEFunctions.m in Sources */,
 				1B9CB9C92AD724D70053DF33 /* ControllerCommand.swift in Sources */,
 				1B5F94BA2AE6FE7300F7D3B4 /* WindowLayoutManager.swift in Sources */,
 				1BAE2F1B2AE0591300DDFF02 /* Controller.swift in Sources */,

@@ -2,7 +2,7 @@
 //  csshx_tests.swift
 //  csshx-tests
 //
-//  Created by Jean-Daniel Dupas on 16/10/2023.
+//  Created by Jean-Daniel Dupas.
 //
 
 import XCTest
