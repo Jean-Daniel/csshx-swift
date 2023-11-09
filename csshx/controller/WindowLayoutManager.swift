@@ -16,36 +16,77 @@ struct ScreenId {
 // On layout:
 //  - dispatch hosts on active screens (default to all).
 //  - layout each screen using current screen configuration.
-// On screen removed -> auto relayout
+// On active screen removed -> auto relayout
 // On screen plugged ->
 //    - if known screen: auto relayout
 //    - if new screen: wait for relayout command.
 
 // TODO: Listen for screen configuration change notification
-struct WindowLayoutManager {
+class WindowLayoutManager {
 
   struct Config {
-//    var rows: Int = 0
-//    var columns: Int = 0
-//    var screens: Array<Int> = []
-//    var screenBounds: CGRect? = nil
+    var rows: Int = 0
+    var columns: Int = 0
+    // var screens: Array<Int> = []
+    var screenBounds: CGRect? = nil
     var controllerHeight: CGFloat = 87 // Pixels ?
   }
 
   private var config: Config
 
+  private var dirty: Bool = false
   private var screens: [Screen]
+  private var unpluggedScreens = [String:Screen]()
   private(set) var controllerScreen: Screen? = nil
 
   private var defaultWindowRatio: Double = 0
 
+  static let displayReconfigurationCallback: CGDisplayReconfigurationCallBack = { displayId, flags, ctxt in
+    // Skip begin configuration change events
+    guard let ctxt, flags != .beginConfigurationFlag else { return }
+    let value = Unmanaged<WindowLayoutManager>.fromOpaque(ctxt).takeUnretainedValue()
+    value.didReconfigure(display: displayId, flags: flags)
+  }
+
   init(config: Config) {
     self.config = config
 
+    // Fetch initial screen configuration
     screens = NSScreen.screens.compactMap({ screen in
       guard let uuid = screen._UUIDString() else { return nil }
-      return Screen(uuid: uuid, visibleFrame: screen.visibleFrame)
+      let screen = Screen(uuid: uuid, visibleFrame: screen.visibleFrame)
+      // Initialize default values from global config
+      if config.rows > 0 {
+        screen.set(rows: config.rows)
+      }
+      // Set column after to override rows if both set
+      if config.columns > 0 {
+        screen.set(columns: config.columns)
+      }
+      return screen
     })
+
+    CGDisplayRegisterReconfigurationCallback(Self.displayReconfigurationCallback, Unmanaged.passUnretained(self).toOpaque())
+  }
+
+  deinit {
+    CGDisplayRemoveReconfigurationCallback(Self.displayReconfigurationCallback, Unmanaged.passUnretained(self).toOpaque())
+  }
+  
+  private func reloadScreens() {
+
+  }
+
+  private func didReconfigure(display: CGDirectDisplayID, flags: CGDisplayChangeSummaryFlags) {
+    // FIXME: only handle desktop shape change events ?
+    if (!dirty) {
+      dirty = true
+      DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
+        // refresh using NSScreen API.
+        self.reloadScreens()
+        self.dirty = false
+      }
+    }
   }
 
   func rows(for screen: Int32) -> Int { return 0 }
@@ -66,14 +107,14 @@ struct WindowLayoutManager {
         best = screen
       }
     }
-    return best ?? screens.first(where: \.plugged)
+    return best ?? screens.first
   }
 
   private func screen(for host: HostWindow.ID) -> Screen? {
     return screens.first { $0.hosts.contains(host) }
   }
 
-  mutating func setDefaultWindowRatio(from tab: Terminal.Tab) {
+  func setDefaultWindowRatio(from tab: Terminal.Tab) {
     if (defaultWindowRatio <= 0) {
       let bounds = tab.frame
       if (!bounds.isEmpty) {
@@ -82,11 +123,11 @@ struct WindowLayoutManager {
     }
   }
 
-  mutating func layout(controller tab: Terminal.Tab, hosts: [HostWindow]) {
-    // TODO: refresh active screens based on configuration
-    screens.forEach { $0.active = $0.plugged }
+  func layout(controller tab: Terminal.Tab, hosts: [HostWindow]) {
+    // refresh active screens based on configuration
+    setActiveScreens()
 
-    guard screens.contains(where: { $0.plugged && $0.active }) else {
+    guard screens.contains(where: \.active) else {
       logger.warning("failed to compute screen bounds. Skipping layout pass.")
       return
     }
@@ -106,9 +147,9 @@ struct WindowLayoutManager {
     layout(hosts: hosts, space: tab.space)
   }
 
-  private mutating func layout(hosts: [HostWindow], space: Int32) {
+  private func layout(hosts: [HostWindow], space: Int32) {
     assert(!hosts.isEmpty)
-    let screens = screens.filter { $0.plugged && $0.active }
+    let screens = screens.filter(\.active)
     guard !screens.isEmpty else { return }
 
     // Update all screens frames before computing windows layouts
@@ -146,18 +187,16 @@ struct WindowLayoutManager {
     }
   }
 
-  private mutating func layout(screen: Screen, space: Int32, hosts: [HostWindow.ID:HostWindow]) {
+  private func layout(screen: Screen, space: Int32, hosts: [HostWindow.ID:HostWindow]) {
     guard screen.rows > 0, screen.columns > 0 else { return }
 
     let bounds = screen.hostsFrame
     let width = bounds.width / CGFloat(screen.columns)
     let height = bounds.height / CGFloat(screen.rows)
 
-    for (idx, hostId) in screen.hosts.enumerated() {
+    var layout = screen.grid()
+    for hostId in screen.hosts {
       guard let host = hosts[hostId] else { return }
-
-      let x = CGFloat(idx % screen.columns) * width
-      let y = CGFloat(idx / screen.columns) * height
 
       let tab = host.tab
       // Move to controller space if needed
@@ -168,19 +207,21 @@ struct WindowLayoutManager {
       tab.window.visible = true
       tab.window.miniaturized = false
       tab.window.frontmost = true
+
+      let (column, row) = layout.next()
+      let x = CGFloat(column) * width
+      let y = CGFloat(row) * height
       // Layout from top to bottom
       tab.window.frame = CGRect(x: bounds.minX + x, y: bounds.maxY - height - y, width: width, height: height)
     }
   }
 
-//  private static func visibleFrames(screens: Array<Int>) throws -> [Screen] {
-//    // Default to all screens
-//    if (screens.isEmpty) {
-//      return NSScreen.screens.enumerated().map({ idx, screen in
-//        Screen(id: ScreenId(rawValue: idx), bounds: screen.visibleFrame, maxBounds: screen.visibleFrame)
-//      })
-//    }
-//
+  private func setActiveScreens() {
+    // Default to all screens
+    screens.forEach { $0.active = true }
+
+    // TODO: active screen config should be converted to UUID list on first load,
+    // and then used to keep a stable list of active screens.
 //    let displays = NSScreen.screens
 //    guard !displays.isEmpty else {
 //      throw POSIXError(.ENODEV)
@@ -205,10 +246,11 @@ struct WindowLayoutManager {
 //      let bounds = (NSScreen.main ?? displays[0]).visibleFrame
 //      return [Screen(id: ScreenId(rawValue: 0), bounds: bounds, maxBounds: bounds)]
 //    }
-//
-//    // TODO: sort screen from left to right ?
-//    return frames
-//  }
+  }
+}
+
+private protocol ScreenGrid {
+  mutating func next() -> (Int, Int)
 }
 
 class Screen {
@@ -216,12 +258,11 @@ class Screen {
   // Actual screen visible frame (fullscreen frame)
   var visibleFrame: CGRect
 
-  fileprivate var plugged: Bool = true
   fileprivate var active: Bool = false
 
   // Configuration
-  var requestedRows: Int = 0
-  var requestedColumns: Int = 0
+  private(set) var requestedRows: Int = 0
+  private(set) var requestedColumns: Int = 0
   private(set) var requestedFrame: CGRect? // relative to screen frame
 
   // Computed layout
@@ -240,15 +281,29 @@ class Screen {
 
   fileprivate var hosts: [HostWindow.ID] = []
 
-  fileprivate var rows: Int = 0
-  fileprivate var columns: Int = 0
+  fileprivate(set) var rows: Int = 0
+  fileprivate(set) var columns: Int = 0
 
   fileprivate init(uuid: String, visibleFrame frame: CGRect) {
     self.uuid = uuid
     self.visibleFrame = frame
   }
 
-  func setRequestFrame(_ frame: CGRect, isRelative: Bool) {
+  // Public API
+
+  var count: Int { hosts.count }
+  
+  func set(rows: Int) {
+    requestedRows = rows
+    requestedColumns = 0
+  }
+
+  func set(columns: Int) {
+    requestedColumns = columns
+    requestedRows = 0
+  }
+
+  func set(frame: CGRect, isRelative: Bool) {
     if (isRelative) {
       requestedFrame = frame
     } else {
@@ -284,17 +339,76 @@ class Screen {
 
   private func updateGrid(for ratio: CGFloat) {
     let count = hosts.count
-    if requestedRows > 0 {
-      rows = min(requestedRows, count)
-      columns = Int(ceil(Float(count) / Float(rows)))
-    } else if requestedColumns > 0 {
+    if requestedColumns > 0 {
       columns = min(requestedColumns, count)
       rows = Int(ceil(Float(count) / Float(columns)))
+    } else if requestedRows > 0 {
+      rows = min(requestedRows, count)
+      columns = Int(ceil(Float(count) / Float(rows)))
     } else if (ratio > 0) {
       (rows, columns) = getBestLayout(for: ratio, hosts: count, on: frame.size)
     } else {
       rows = 0
       columns = 0
+    }
+  }
+
+  struct ColumnsLayout: ScreenGrid {
+    let columns: Int
+    private var cursor = 0
+
+    init(columns: Int) {
+      self.columns = columns
+    }
+
+    mutating func next() -> (Int, Int) {
+      let pos = cursor
+      cursor += 1
+      return (pos % columns, pos / columns)
+    }
+  }
+
+  struct RowsLayout: ScreenGrid {
+    let rows: Int
+    let columns: Int
+    private let lastColumnsCount: Int
+
+    private var column = 0
+    private var row = 0
+
+    init(rows: Int, columns: Int, hostCount: Int) {
+      self.rows = rows
+      self.columns = columns
+      // count of hosts in the last column
+      lastColumnsCount = hostCount.isMultiple(of: rows) ? rows : hostCount % rows
+    }
+
+    mutating func next() -> (Int, Int) {
+      let x = column
+      let y = row
+      
+      // Compute next position
+      if (column == columns - 1) // was last column
+          || (column == columns - 2 && row >= lastColumnsCount) { // second last column, and last column is empty for this row.
+        // wrap around
+        row += 1
+        column = 0
+      } else {
+        column += 1
+      }
+
+      return (x, y)
+    }
+  }
+
+  fileprivate func grid() -> ScreenGrid {
+    // populate by columns instead of populating by rows if row count requested
+    // i.e. 5 hosts in 4 columns mode will result in 1 full row of 4 hosts, and a second row with one host
+    // in rows mode, it should be 1 row with 2 hosts, and 3 rows with one host.
+    if (requestedRows > 0 && requestedColumns <= 0) {
+      return RowsLayout(rows: rows, columns: columns, hostCount: hosts.count)
+    } else {
+      return ColumnsLayout(columns: columns)
     }
   }
 

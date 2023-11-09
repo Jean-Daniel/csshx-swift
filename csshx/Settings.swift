@@ -340,14 +340,14 @@ extension Settings {
     // Screen Layout
     "space": .set(\Settings.space),
 
-//    "tile_x": .set(\Settings.layout.columns),
-//    "columns": .set(\Settings.layout.columns),
-//    "tile_y": .set(\Settings.layout.rows),
-//    "rows": .set(\Settings.layout.rows),
-//
+    "tile_x": .set(\Settings.layout.columns),
+    "columns": .set(\Settings.layout.columns),
+    "tile_y": .set(\Settings.layout.rows),
+    "rows": .set(\Settings.layout.rows),
+
 //    "screen": .set(\Settings.layout.screens),
 //    "screens": .set(\Settings.layout.screens),
-//    "screen_bounds": .set(\Settings.layout.screenBounds),
+    "screen_bounds": .set(\Settings.layout.screenBounds),
 
     "master_height": .set(\Settings.layout.controllerHeight),
     "controller_height": .set(\Settings.layout.controllerHeight),

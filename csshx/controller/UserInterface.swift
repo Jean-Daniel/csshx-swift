@@ -151,7 +151,7 @@ extension InputMode {
       "[c]reate window, [r]etile, s[o]rt, [e]nable/disable input, e[n]able all, " +
       // ( (!ctrl.hosts.isEmpty) && (enabled) ? "[Space] Enable next " : "") +
       "[t]oggle enabled, [m]inimise, [h]ide, [s]end text, change [b]ounds, " +
-      "chan[g]e [G]rid, e[x]it\r\n";
+      "change [g]rid, e[x]it\r\n";
     }
 
     func onEnable(_ ctrl: Controller) throws {
@@ -225,16 +225,9 @@ extension InputMode {
         return InputMode.Bounds()
       }
 
-      // add grid row
+      // Switch to grid mode
       else if "g" ~= input {
-//        ctrl.windowManager.controllerScreen?.addColumn()
-//        ctrl.layout()
-      }
-
-      // remove grid row
-      else if "G" ~= input {
-//        ctrl.windowManager.controllerScreen?.removeColumn()
-//        ctrl.layout()
+        return InputMode.Grid()
       }
 
       // exit
@@ -293,7 +286,7 @@ extension InputMode {
       }
 
       // resize master to match "layout manager" bounds
-      screen = ctrl.windowManager.controllerScreen
+      screen = ctrl.controllerScreen
       if let screen, !screen.frame.isEmpty {
         ctrl.tab?.window.frame = screen.frame
       }
@@ -360,7 +353,7 @@ extension InputMode {
       // apply
       else if "\r" ~= input {
         if let frame = ctrl.tab?.frame {
-          screen.setRequestFrame(frame, isRelative: false)
+          screen.set(frame: frame, isRelative: false)
         }
         ctrl.setControllerColors()
         ctrl.layout()
@@ -414,6 +407,8 @@ private extension Comparable {
 }
 
 private extension Controller {
+  var controllerScreen: Screen? { windowManager.controllerScreen }
+
   func move(screen: Screen, dx: Int, dy: Int) {
     if var frame = tab?.window.frame {
       let xRange = screen.visibleFrame.minX..<(screen.visibleFrame.maxX - frame.width)
@@ -591,7 +586,7 @@ extension InputMode {
       selection = ctrl.hosts.first
 
       // default to controller screen
-      screen = ctrl.windowManager.controllerScreen
+      screen = ctrl.controllerScreen
     }
 
     mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
@@ -745,3 +740,87 @@ extension InputMode {
   }
 }
 
+// grid mode:
+// use arrows to increase/decrease count of rows/columns of the current screen.
+// TODO: multiscreen support
+// allows setting the rows/columns count to 0 if there is multiple screens -> disable/enable the screen accordingly.
+// use tab to circle over all screens.
+extension InputMode {
+
+  struct Grid: InputModeProtocol {
+
+    var id: String { "grid" }
+
+    var raw: Bool { true }
+
+    private var screen: Screen? = nil
+
+    func prompt(_ ctrl: Controller) -> String {
+      "Change the rows/columns layout with Arrow keys or h,j,k,l: (Esc to exit)\r\n" +
+      "[r]eset layout\r\n"
+    }
+
+    mutating func onEnable(_ ctrl: Controller) throws {
+      // default to controller screen
+      screen = ctrl.controllerScreen
+    }
+
+    mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
+      // ↑
+      if "i" ~= input || "\u{1b}[A" ~= input {
+        guard let screen, screen.rows < screen.count else {
+          beep()
+          return nil
+        }
+        screen.set(rows: screen.rows + 1)
+        ctrl.layout()
+      }
+      // ↓
+      else if "k" ~= input || "\u{1b}[B" ~= input {
+        guard let screen, screen.rows > 1 else {
+          beep()
+          return nil
+        }
+        screen.set(rows: screen.rows - 1)
+        ctrl.layout()
+      }
+      // →
+      else if "l" ~= input || "\u{1b}[C" ~= input {
+        guard let screen, screen.columns < screen.count else {
+          beep()
+          return nil
+        }
+        screen.set(columns: screen.columns + 1)
+        ctrl.layout()
+      }
+      // ←
+      else if "j" ~= input || "\u{1b}[D" ~= input {
+        guard let screen, screen.columns > 1 else {
+          beep()
+          return nil
+        }
+        screen.set(columns: screen.columns - 1)
+        ctrl.layout()
+      }
+
+      // reset layout
+      else if "r" ~= input {
+        screen?.set(columns: 0)
+        ctrl.layout()
+      }
+
+      else if 0x1b ~= input || 0x0d ~= input {
+        // escape (\e)
+        // TODO: if is escape sequence -> delete it and beep.
+        // else switch to input mode
+        ctrl.hosts.forEach { $0.selected = false }
+        return InputMode.Input()
+      } else {
+        input.removeAll()
+        beep()
+      }
+
+      return nil
+    }
+  }
+}
