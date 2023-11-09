@@ -94,14 +94,14 @@ static inline socklen_t socklen(struct sockaddr_un *addr) {
 
   // Ensure the file does not exists before binding
   unlink([path fileSystemRepresentation]);
-  // mode_t mask = umask(mode);
+  mode_t mask = umask(mode);
   if (bind(sock, (struct sockaddr *)&addr, socklen(&addr)) < 0) {
     *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
-    // umask(mask);
+    umask(mask);
     close(sock);
     return 0;
   }
-  // umask(mask);
+  umask(mask);
   return sock;
 }
 
