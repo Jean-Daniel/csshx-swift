@@ -5,7 +5,7 @@
 //  Created by Jean-Daniel Dupas.
 //
 
-import Foundation
+import Cocoa
 import RegexBuilder
 
 struct ScriptingBridgeError: Error {
@@ -184,7 +184,7 @@ extension Terminal {
 }
 
 private class TerminalApplicationDelegate: SBApplicationDelegate {
-  func eventDidFail(_ event: UnsafePointer<AppleEvent>, withError error: Error) -> Any? {
+  func eventDidFail(_ event: UnsafePointer<AppleEvent>, withError error: any Error) -> Any? {
     let err = error as NSError
     logger.warning("apple event did failed with error: \(err)")
     return nil

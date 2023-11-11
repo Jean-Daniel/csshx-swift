@@ -139,6 +139,8 @@ class Controller {
                            queue: .main, cleanupHandler: { [self] error in
       do {
         try setRawInputMode(false)
+        // exit after restoring the input mode
+        Foundation.exit(0)
       } catch {}
     })
     // disable buffering
@@ -150,6 +152,13 @@ class Controller {
     try inputMode.onEnable(self)
     prompt()
 
+    //      let winch = DispatchSource.makeSignalSource(signal: SIGWINCH)
+    //      winch.setEventHandler {
+    //        May be use to show live frame size in bounds mode.
+    //        logger.debug("SIGWINCH event")
+    //      }
+    //      winch.resume()
+
     input.read { [self] bytes in
       onBytesAvailable(bytes)
     } whenDone: { [self] error in
@@ -158,8 +167,6 @@ class Controller {
         logger.warning("stdin done with error: \(error)")
         close()
       }
-      // we are done
-      Foundation.exit(0)
     }
   }
 
@@ -183,7 +190,6 @@ class Controller {
       tab.setTextColor(color: color)
     }
   }
-
 }
 
 // MARK: - Controller Socket & Hosts Management
@@ -191,7 +197,7 @@ private func getPeerProcessId(socket: Int32) -> pid_t {
   var pid: pid_t = 0
   var pid_size = socklen_t(MemoryLayout.size(ofValue: pid))
   guard getsockopt(socket, SOL_LOCAL, LOCAL_PEERPID, &pid, &pid_size) == 0 else {
-    logger.warning("failed to retreive socket pid: \(errno)")
+    logger.warning("failed to retreive socket pid: \(POSIXError.errno)")
     return 0
   }
   return pid
@@ -212,6 +218,11 @@ extension Controller {
       switch (result) {
         case .success(let fd):
           let pid = getPeerProcessId(socket: fd)
+          guard pid > 0 else {
+            Darwin.close(fd)
+            return
+          }
+
           logger.info("[\(pid)] did open connection")
           let tty = Bridge.getProcessTTY(pid)
           guard tty > 0 else {
@@ -235,7 +246,7 @@ extension Controller {
     }
   }
   
-  func add(host target: Target, whenDone done: @escaping (Error?) -> Void) throws {
+  func add(host target: Target, whenDone done: @escaping ((any Error)?) -> Void) throws {
     let tab = try Terminal.Tab.open()
     if let profile = settings.hostWindowProfile {
       if (!tab.setProfile(profile)) {
@@ -311,7 +322,7 @@ extension Controller {
                                  cleanupHandler: { error in Darwin.close(socket) })
 
     if let done = host.whenDone {
-      // TODO: update prompt if dynamic
+      // TODO: update prompt if not ready yet.
       host.whenDone = nil
       done(nil)
     }

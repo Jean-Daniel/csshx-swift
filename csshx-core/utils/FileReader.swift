@@ -11,7 +11,7 @@ import System
 // When using async, it is easier to simply use URL.lines.
 extension FilePath {
   func readLines(_ handler: (String) throws -> Void) throws {
-    var err: Error? = nil
+    var err: (any Error)? = nil
     let content: String
     do {
       content = try String(contentsOfFile: (string as NSString).expandingTildeInPath)

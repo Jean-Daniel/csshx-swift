@@ -8,7 +8,7 @@
 import XCTest
 import OSLog
 
-let logger = Logger(subsystem: "com.xenonium.csshx", category: "tests")
+// @testable import CsshxCore
 
 final class csshx_tests: XCTestCase {
 

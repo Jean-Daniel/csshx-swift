@@ -6,6 +6,7 @@
 //
 
 import XCTest
+// @testable import CsshxCore
 
 final class HostListTests: XCTestCase {
 

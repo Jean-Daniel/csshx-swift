@@ -2,9 +2,8 @@
  * Terminal.h
  */
 
-//#import <AppKit/AppKit.h>
-#import <ScriptingBridge/ScriptingBridge.h>
 #import <AppKit/AppKit.h>
+#import <ScriptingBridge/ScriptingBridge.h>
 
 @class TerminalApplication, TerminalWindow, TerminalSettingsSet, TerminalTab;
 
@@ -32,7 +31,6 @@ typedef enum TerminalPrintingErrorHandling TerminalPrintingErrorHandling;
 - (void) moveTo:(SBObject *)to;  // Move object(s) to a new location.
 
 @end
-
 
 
 /*

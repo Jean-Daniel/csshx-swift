@@ -21,26 +21,28 @@ struct ScreenId {
 //    - if known screen: auto relayout
 //    - if new screen: wait for relayout command.
 
-// TODO: Listen for screen configuration change notification
 class WindowLayoutManager {
 
   struct Config {
     var rows: Int = 0
     var columns: Int = 0
-    // var screens: Array<Int> = []
-    var screenBounds: CGRect? = nil
+    // TODO: new configuration
+    // - per screen bounds, and grid (rows, columns)
+    // - controller screen
     var controllerHeight: CGFloat = 87 // Pixels ?
   }
 
   private var config: Config
 
-  private var dirty: Bool = false
   private var screens: [Screen]
+  // array to keep unplug screens configuration
   private var unpluggedScreens = [String:Screen]()
   private(set) var controllerScreen: Screen? = nil
 
+  // internal value use by smart layout
   private var defaultWindowRatio: Double = 0
 
+  private var dirty: Bool = false
   static let displayReconfigurationCallback: CGDisplayReconfigurationCallBack = { displayId, flags, ctxt in
     // Skip begin configuration change events
     guard let ctxt, flags != .beginConfigurationFlag else { return }
@@ -88,12 +90,6 @@ class WindowLayoutManager {
       }
     }
   }
-
-  func rows(for screen: Int32) -> Int { return 0 }
-  func set(rows: Int, for screen: Int32) {}
-
-  func columns(for screen: Int32) -> Int { return 0 }
-  func set(columns: Int, for screen: Int32) {}
 
   private func screen(for frame: CGRect) -> Screen? {
     var best: Screen? = nil
@@ -401,11 +397,11 @@ class Screen {
     }
   }
 
-  fileprivate func grid() -> ScreenGrid {
-    // populate by columns instead of populating by rows if row count requested
-    // i.e. 5 hosts in 4 columns mode will result in 1 full row of 4 hosts, and a second row with one host
-    // in rows mode, it should be 1 row with 2 hosts, and 3 rows with one host.
+  fileprivate func grid() -> any ScreenGrid {
     if (requestedRows > 0 && requestedColumns <= 0) {
+      // populate by columns instead of populating by rows if row count requested
+      // i.e. 5 hosts in 4 columns mode will result in 1 full row of 4 hosts, and a second row with one host
+      // in rows mode, it should be 1 row with 2 hosts, and 3 rows with one host.
       return RowsLayout(rows: rows, columns: columns, hostCount: hosts.count)
     } else {
       return ColumnsLayout(columns: columns)

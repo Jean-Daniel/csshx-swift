@@ -12,7 +12,7 @@ class IOListener {
   private let path: String
   private let socket: Int32
   
-  private var listening: DispatchSourceRead? = nil
+  private var listening: (any DispatchSourceRead)? = nil
   
   fileprivate init(socket: Int32, path: String) {
     self.socket = socket
@@ -34,7 +34,7 @@ class IOListener {
     }
   }
   
-  func startWaiting(_ handler: @escaping (Result<Int32, Error>) -> Void) {
+  func startWaiting(_ handler: @escaping (Result<Int32, any Error>) -> Void) {
     guard listening == nil else {
       return
     }
@@ -73,7 +73,7 @@ extension IOListener {
 
 extension DispatchIO {
 
-  func read(_ block: @escaping (DispatchData) -> Void, whenDone: @escaping (Error?) -> Void) {
+  func read(_ block: @escaping (DispatchData) -> Void, whenDone: @escaping ((any Error)?) -> Void) {
     read(offset: 0, length: .max, queue: .main) { [self] done, data, error in
       if error == ECANCELED {
         whenDone(nil)
@@ -89,7 +89,7 @@ extension DispatchIO {
     }
   }
   
-  func write(_ data: DispatchData, whenDone: @escaping (Error?) -> Void) {
+  func write(_ data: DispatchData, whenDone: @escaping ((any Error)?) -> Void) {
     write(offset: 0, data: data, queue: .main) { done, data, error in
       guard done else {
         // Ignore partial write

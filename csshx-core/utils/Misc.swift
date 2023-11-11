@@ -88,17 +88,21 @@ struct stty {
 }
 
 func getBestLayout(for ratio: Double, hosts: Int, on screen: CGSize) -> (Int, Int) {
-  var bestRowCount = 0
-  var bestColumnCount = 0
+  var bestGrid = (0, 0)
+  var bestExactGrid = (-1, -1)
   var bestRatioDelta = Double.infinity
+  var bestExactRatioDelta = Double.infinity
 
   func testRatio(rows: Int, columns: Int) {
     let winRatio = (screen.width / Double(columns)) / (screen.height / Double(rows))
     let delta = ratio > winRatio ? ratio / winRatio : winRatio / ratio
     if delta < bestRatioDelta {
       bestRatioDelta = delta
-      bestRowCount = rows
-      bestColumnCount = columns
+      bestGrid = (rows, columns)
+    }
+    if delta < bestExactRatioDelta, hosts == rows * columns {
+      bestExactRatioDelta = delta
+      bestExactGrid = (rows, columns)
     }
   }
 
@@ -110,10 +114,6 @@ func getBestLayout(for ratio: Double, hosts: Int, on screen: CGSize) -> (Int, In
     case 2:
       testRatio(rows: 1, columns: 2)
       testRatio(rows: 2, columns: 1)
-    case 3:
-      // Special case for 3 to avoid wasting 1/4 of the screen space (2x2 layout)
-      testRatio(rows: 1, columns: 3)
-      testRatio(rows: 3, columns: 1)
     default:
       for rows in 1...Int(ceil(Float(hosts).squareRoot())) {
         // For each rows x columns
@@ -126,6 +126,14 @@ func getBestLayout(for ratio: Double, hosts: Int, on screen: CGSize) -> (Int, In
       }
   }
 
-  return (bestRowCount, bestColumnCount)
+  // Favor exact match over best ratio if it is close.
+  // (6x4 instead of 5x5 for 24 windows for instance)
+  if bestExactGrid.0 > 0
+      && bestGrid.0.distance(to: bestExactGrid.0) <= 1
+      && bestGrid.1.distance(to: bestExactGrid.1) <= 1 {
+    return bestExactGrid
+  }
+
+  return bestGrid
 }
 

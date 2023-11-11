@@ -57,7 +57,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "xenonium.com"
+            argument = "workers"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

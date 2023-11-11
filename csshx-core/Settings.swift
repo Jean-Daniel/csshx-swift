@@ -247,7 +247,7 @@ struct Settings {
 
   var dummy: Bool = false
   // Windows Layout
-  var space: Int32 = -1
+  // var space: Int32 = -1
 
   var layout = WindowLayoutManager.Config()
   var hostWindow = HostWindow.Config()
@@ -338,7 +338,7 @@ extension Settings {
     "interleave": .set(\Settings.interleave),
 
     // Screen Layout
-    "space": .set(\Settings.space),
+    // "space": .set(\Settings.space),
 
     "tile_x": .set(\Settings.layout.columns),
     "columns": .set(\Settings.layout.columns),
@@ -347,7 +347,7 @@ extension Settings {
 
 //    "screen": .set(\Settings.layout.screens),
 //    "screens": .set(\Settings.layout.screens),
-    "screen_bounds": .set(\Settings.layout.screenBounds),
+//    "screen_bounds": .set(\Settings.layout.screenBounds),
 
     "master_height": .set(\Settings.layout.controllerHeight),
     "controller_height": .set(\Settings.layout.controllerHeight),

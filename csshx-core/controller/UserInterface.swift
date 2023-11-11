@@ -270,7 +270,7 @@ extension InputMode {
     func prompt(_ ctrl: Controller) -> String {
       "Move and resize master with mouse to define bounds: (Enter to accept, Esc to cancel)\r\n" +
       "(Also Arrow keys of h,j,k,l can move window, hold Ctrl to resize)\r\n" +
-      "[r]eset to default, [f]ull screen, [p]rint current bounds"
+      "[r]eset to default, [f]ull screen, [p]rint screens configuration"
     }
 
     mutating func onEnable(_ ctrl: Controller) throws {
@@ -334,8 +334,9 @@ extension InputMode {
         ctrl.resize(screen: screen, dx: -1, dy: 0)
       }
 
-      // print bounds
+      // print screens configuration
       else if "p" ~= input {
+        // FIXME: update to match multi-screen config once defined.
         if let bounds = ctrl.tab?.window.frame {
           fwrite(str: "\r\n\r\nscreen_bounds = { \(Int(bounds.origin.x)), \(Int(bounds.origin.y)), \(Int(bounds.width)), \(Int(bounds.height)) }\r\n")
         } else {
@@ -757,7 +758,7 @@ extension InputMode {
 
     func prompt(_ ctrl: Controller) -> String {
       "Change the rows/columns layout with Arrow keys or h,j,k,l: (Esc to exit)\r\n" +
-      "[r]eset layout\r\n"
+      "[r]eset layout, [p]rint screens configuration\r\n"
     }
 
     mutating func onEnable(_ ctrl: Controller) throws {

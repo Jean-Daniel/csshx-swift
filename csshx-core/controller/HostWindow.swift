@@ -23,7 +23,7 @@ class HostWindow: Equatable {
   let tty: dev_t
 
   // Terminal Tab + Socket Connection
-  var whenDone: ((Error?) -> Void)? = nil
+  var whenDone: (((any Error)?) -> Void)? = nil
   var connection: DispatchIO? = nil
 
   var enabled: Bool = true {
