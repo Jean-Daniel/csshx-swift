@@ -11,7 +11,19 @@
 #import <sys/un.h>
 #import <sys/sysctl.h>
 
-@implementation Bridge
+@implementation Termios
+
++ (dev_t)getProcessTTY:(pid_t)pid {
+  struct kinfo_proc info;
+  size_t length = sizeof(struct kinfo_proc);
+  int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, pid };
+  if (sysctl(mib, 4, &info, &length, NULL, 0) < 0)
+    return 0;
+  if (length == 0)
+    return 0;
+
+  return info.kp_eproc.e_tdev;
+}
 
 + (BOOL)tiocsti:(uint8_t)c error:(NSError **)error {
   const char value = c;
@@ -21,6 +33,10 @@
   }
   return true;
 }
+
+@end
+
+@implementation Socket
 
 static
 dispatch_fd_t _socket(NSString *path, struct sockaddr_un *sockaddr, NSError **error) {
@@ -53,17 +69,7 @@ dispatch_fd_t _socket(NSString *path, struct sockaddr_un *sockaddr, NSError **er
   return sock;
 }
 
-+ (dev_t)getProcessTTY:(pid_t)pid {
-  struct kinfo_proc info;
-  size_t length = sizeof(struct kinfo_proc);
-  int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, pid };
-  if (sysctl(mib, 4, &info, &length, NULL, 0) < 0)
-    return 0;
-  if (length == 0)
-    return 0;
 
-  return info.kp_eproc.e_tdev;
-}
 
 static inline socklen_t socklen(struct sockaddr_un *addr) {
   return (socklen_t)SUN_LEN(addr);

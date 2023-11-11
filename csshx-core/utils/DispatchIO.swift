@@ -62,7 +62,7 @@ class IOListener {
 
 extension IOListener {
   static func listen(socket: String) throws -> IOListener {
-    let fd = try Bridge.bind(socket, umask: 0o077)
+    let fd = try Socket.bind(socket, umask: 0o077)
     if Darwin.listen(fd, 256) != 0 {
       throw POSIXError.errno
     }

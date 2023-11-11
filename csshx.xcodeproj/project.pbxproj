@@ -18,7 +18,7 @@
 		1B6FBCFC2B002ADF00677D27 /* Misc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6FBCE82B002ADF00677D27 /* Misc.swift */; };
 		1B6FBCFD2B002ADF00677D27 /* DispatchSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6FBCE92B002ADF00677D27 /* DispatchSource.swift */; };
 		1B6FBCFE2B002ADF00677D27 /* FileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6FBCEA2B002ADF00677D27 /* FileReader.swift */; };
-		1B6FBCFF2B002ADF00677D27 /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6FBCEB2B002ADF00677D27 /* Socket.swift */; };
+		1B6FBCFF2B002ADF00677D27 /* DispatchIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6FBCEB2B002ADF00677D27 /* DispatchIO.swift */; };
 		1B6FBD002B002ADF00677D27 /* Controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6FBCED2B002ADF00677D27 /* Controller.swift */; };
 		1B6FBD012B002ADF00677D27 /* HostWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6FBCEE2B002ADF00677D27 /* HostWindow.swift */; };
 		1B6FBD022B002ADF00677D27 /* WindowLayoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6FBCEF2B002ADF00677D27 /* WindowLayoutManager.swift */; };
@@ -60,7 +60,6 @@
 		1B1E7FD02ACCA2D1009BA975 /* csshx */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = csshx; sourceTree = BUILT_PRODUCTS_DIR; };
 		1B1E7FDA2ACCA2E6009BA975 /* Csshx.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Csshx.swift; sourceTree = "<group>"; };
 		1B1E7FDF2ACCA607009BA975 /* csshX */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = csshX; sourceTree = "<group>"; };
-		1B6798F32AFF73F300364B6B /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		1B6FBCE22B002ADF00677D27 /* ConfigReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigReader.swift; sourceTree = "<group>"; };
 		1B6FBCE32B002ADF00677D27 /* Logging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		1B6FBCE52B002ADF00677D27 /* Terminal.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Terminal.swift; sourceTree = "<group>"; };
@@ -69,7 +68,7 @@
 		1B6FBCE82B002ADF00677D27 /* Misc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Misc.swift; sourceTree = "<group>"; };
 		1B6FBCE92B002ADF00677D27 /* DispatchSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DispatchSource.swift; sourceTree = "<group>"; };
 		1B6FBCEA2B002ADF00677D27 /* FileReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileReader.swift; sourceTree = "<group>"; };
-		1B6FBCEB2B002ADF00677D27 /* Socket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Socket.swift; sourceTree = "<group>"; };
+		1B6FBCEB2B002ADF00677D27 /* DispatchIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DispatchIO.swift; sourceTree = "<group>"; };
 		1B6FBCED2B002ADF00677D27 /* Controller.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Controller.swift; sourceTree = "<group>"; };
 		1B6FBCEE2B002ADF00677D27 /* HostWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HostWindow.swift; sourceTree = "<group>"; };
 		1B6FBCEF2B002ADF00677D27 /* WindowLayoutManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WindowLayoutManager.swift; sourceTree = "<group>"; };
@@ -130,7 +129,6 @@
 		1B1E7FC72ACCA2D1009BA975 = {
 			isa = PBXGroup;
 			children = (
-				1B6798F32AFF73F300364B6B /* Package.swift */,
 				1BA21F8A2ADDA4D400F85A1E /* csshx.xctestplan */,
 				1B021A682AD9510E00255894 /* README.md */,
 				1B1E7FD22ACCA2D1009BA975 /* csshx */,
@@ -206,7 +204,7 @@
 				1B6FBCE82B002ADF00677D27 /* Misc.swift */,
 				1B6FBCE92B002ADF00677D27 /* DispatchSource.swift */,
 				1B6FBCEA2B002ADF00677D27 /* FileReader.swift */,
-				1B6FBCEB2B002ADF00677D27 /* Socket.swift */,
+				1B6FBCEB2B002ADF00677D27 /* DispatchIO.swift */,
 			);
 			path = utils;
 			sourceTree = "<group>";
@@ -358,7 +356,7 @@
 				1B6FBCFE2B002ADF00677D27 /* FileReader.swift in Sources */,
 				1B6FBCF72B002ADF00677D27 /* ConfigReader.swift in Sources */,
 				1B6FBCF82B002ADF00677D27 /* Logging.swift in Sources */,
-				1B6FBCFF2B002ADF00677D27 /* Socket.swift in Sources */,
+				1B6FBCFF2B002ADF00677D27 /* DispatchIO.swift in Sources */,
 				1B6FBD022B002ADF00677D27 /* WindowLayoutManager.swift in Sources */,
 				1B6FBCFB2B002ADF00677D27 /* TerminalTab.swift in Sources */,
 				1B6FBCFA2B002ADF00677D27 /* HostList.swift in Sources */,

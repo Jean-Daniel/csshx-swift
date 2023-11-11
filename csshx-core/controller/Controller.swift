@@ -224,7 +224,7 @@ extension Controller {
           }
 
           logger.info("[\(pid)] did open connection")
-          let tty = Bridge.getProcessTTY(pid)
+          let tty = Termios.getProcessTTY(pid)
           guard tty > 0 else {
             logger.warning("[\(pid)] cannot get connected process tty. Rejecting the connection")
             Darwin.close(fd)

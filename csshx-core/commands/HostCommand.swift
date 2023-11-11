@@ -48,7 +48,7 @@ public struct HostCommand: ParsableCommand {
         withUnsafePointer(to: c) { ptr in
           do {
             if !dummy {
-              try Bridge.tiocsti(c)
+              try Termios.tiocsti(c)
             } else {
               // noop
             }
@@ -89,7 +89,7 @@ private class SSHWrapper {
   let connection: DispatchIO
 
   init(socket: String) throws {
-    let fd = try Bridge.connect(socket)
+    let fd = try Socket.connect(socket)
     self.connection = DispatchIO(type: .stream,
                                  fileDescriptor: fd,
                                  queue: DispatchQueue.main,
