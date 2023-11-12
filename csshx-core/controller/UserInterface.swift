@@ -612,7 +612,7 @@ extension InputMode {
       // →
       else if "l" ~= input || "\u{1b}[C" ~= input {
         if let selected = selection,
-           let next = screen?.getHostAfter(selected.id).flatMap({ hid in
+           let next = screen?.getHostRight(of: selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
            }) {
           selection = next
@@ -621,7 +621,7 @@ extension InputMode {
       // ←
       else if "j" ~= input || "\u{1b}[D" ~= input {
         if let selected = selection,
-           let next = screen?.getHostBefore(selected.id).flatMap({ hid in
+           let next = screen?.getHostLeft(of: selected.id).flatMap({ hid in
              ctrl.hosts.first { $0.id == hid }
            }) {
           selection = next
@@ -769,7 +769,7 @@ extension InputMode {
     mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
       // ↑
       if "i" ~= input || "\u{1b}[A" ~= input {
-        guard let screen, screen.rows < screen.count else {
+        guard let screen, screen.rows < screen.hostCount else {
           beep()
           return nil
         }
@@ -787,7 +787,7 @@ extension InputMode {
       }
       // →
       else if "l" ~= input || "\u{1b}[C" ~= input {
-        guard let screen, screen.columns < screen.count else {
+        guard let screen, screen.columns < screen.hostCount else {
           beep()
           return nil
         }

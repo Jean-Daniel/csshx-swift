@@ -107,7 +107,7 @@ class WindowLayoutManager {
   }
 
   private func screen(for host: HostWindow.ID) -> Screen? {
-    return screens.first { $0.hosts.contains(host) }
+    return screens.first { $0.contains(host: host) }
   }
 
   func setDefaultWindowRatio(from tab: Terminal.Tab) {
@@ -140,10 +140,10 @@ class WindowLayoutManager {
     }
 
     guard !hosts.isEmpty else { return }
-    layout(hosts: hosts, space: tab.space)
+    layout(hosts: hosts)
   }
 
-  private func layout(hosts: [HostWindow], space: Int32) {
+  private func layout(hosts: [HostWindow]) {
     assert(!hosts.isEmpty)
     let screens = screens.filter(\.active)
     guard !screens.isEmpty else { return }
@@ -179,36 +179,34 @@ class WindowLayoutManager {
     var hostsById = [HostWindow.ID:HostWindow]()
     hosts.forEach { host in hostsById[host.id] = host }
     for screen in screens {
-      layout(screen: screen, space: space, hosts: hostsById)
+      layout(screen: screen, hosts: hostsById)
     }
   }
 
-  private func layout(screen: Screen, space: Int32, hosts: [HostWindow.ID:HostWindow]) {
-    guard screen.rows > 0, screen.columns > 0 else { return }
+  private func layout(screen: Screen, hosts: [HostWindow.ID:HostWindow]) {
+    guard let grid = screen.grid else { return }
 
     let bounds = screen.hostsFrame
-    let width = bounds.width / CGFloat(screen.columns)
-    let height = bounds.height / CGFloat(screen.rows)
+    let width = bounds.width / CGFloat(grid.columns)
+    let height = bounds.height / CGFloat(grid.rows)
 
-    var layout = screen.grid()
-    for hostId in screen.hosts {
-      guard let host = hosts[hostId] else { return }
+    // Layout from top to bottom
+    var y = bounds.maxY - height
+    for row in grid.grid {
+      var x = bounds.minX
+      for hostId in row {
+        guard let tab = hosts[hostId]?.tab else { continue }
 
-      let tab = host.tab
-      // Move to controller space if needed
-      if space > 0 {
-        tab.space = space
+        tab.window.zoomed = false
+        tab.window.visible = true
+        tab.window.miniaturized = false
+        tab.window.frontmost = true
+        // Layout from top to bottom
+        tab.window.frame = CGRect(x: x, y: y, width: width, height: height)
+
+        x += width
       }
-      tab.window.zoomed = false
-      tab.window.visible = true
-      tab.window.miniaturized = false
-      tab.window.frontmost = true
-
-      let (column, row) = layout.next()
-      let x = CGFloat(column) * width
-      let y = CGFloat(row) * height
-      // Layout from top to bottom
-      tab.window.frame = CGRect(x: bounds.minX + x, y: bounds.maxY - height - y, width: width, height: height)
+      y -= height
     }
   }
 
@@ -245,8 +243,90 @@ class WindowLayoutManager {
   }
 }
 
-private protocol ScreenGrid {
-  mutating func next() -> (Int, Int)
+// MARK: -
+private struct HostGrid {
+  let rows: Int
+  let columns: Int
+
+  // caching total host count
+  let count: Int
+  
+  // List of rows
+  let grid: [[HostWindow.ID]]
+
+  private func getPosition(of host: HostWindow.ID) -> (Int, Int)? {
+    for row in grid.indices {
+      if let column = grid[row].firstIndex(of: host) {
+        return (row, column)
+      }
+    }
+    return nil
+  }
+
+  // resolve coords in grid (row, column).
+  //   -> compute next/previous by looking in the grid table.
+  func getHostAbove(_ host: HostWindow.ID) -> HostWindow.ID? {
+    // row above should always at least as large as the current row.
+    guard let (row, column) = getPosition(of: host),
+            row > 0, grid[row - 1].endIndex > column else { return nil }
+
+    return grid[row - 1][column]
+  }
+
+  func getHostBelow(_ host: HostWindow.ID) -> HostWindow.ID? {
+    guard let (row, column) = getPosition(of: host), 
+            row + 1 < grid.endIndex, grid[row + 1].endIndex > column else { return nil }
+
+    return grid[row + 1][column]
+  }
+
+  func getHostLeft(of host: HostWindow.ID) -> HostWindow.ID? {
+    guard let (row, column) = getPosition(of: host), column > 0 else { return nil }
+
+    return grid[row][column - 1]
+  }
+
+  func getHostRight(of host: HostWindow.ID) -> HostWindow.ID? {
+    guard let (row, column) = getPosition(of: host), column + 1 < grid[row].endIndex else { return nil }
+
+    return grid[row][column + 1]
+  }
+
+  // Host Grid factories
+  static func byRow(hosts: [HostWindow.ID], rows: Int, columns: Int) -> Self {
+    var grid = [[HostWindow.ID]]()
+
+    // Simply fill rows until there is no more hosts
+    let end = hosts.endIndex
+    var remainings = hosts.startIndex..<end
+    while (!remainings.isEmpty) {
+      let row = remainings.clamped(to: remainings.startIndex..<remainings.startIndex + columns)
+      grid.append(Array(hosts[row]))
+      remainings = row.endIndex..<end
+    }
+    return HostGrid(rows: rows, columns: columns, count: hosts.count, grid: grid)
+  }
+
+  // populate by columns instead of populating by rows if row count requested
+  // i.e. 5 hosts in 4 columns mode will result in 1 full row of 4 hosts, and a second row with one host
+  // in rows mode, it should be 1 row with 2 hosts, and 3 rows with one host.
+  static func byColumns(hosts: [HostWindow.ID], rows: Int, columns: Int) -> Self {
+    var grid = [[HostWindow.ID]]()
+
+    // count of hosts in the last column
+    let fullRows = hosts.count.isMultiple(of: rows) ? rows : hosts.count % rows
+
+    let end = hosts.endIndex
+    var remainings = hosts.startIndex..<end
+    while (!remainings.isEmpty) {
+      let rowLength = grid.count < fullRows ? columns : columns - 1
+      let row = remainings.startIndex..<min(end, remainings.startIndex + rowLength)
+      grid.append(Array(hosts[row]))
+      remainings = row.endIndex..<end
+    }
+
+    return HostGrid(rows: rows, columns: columns, count: hosts.count, grid: grid)
+  }
 }
 
 class Screen {
@@ -275,10 +355,7 @@ class Screen {
     }
   }
 
-  fileprivate var hosts: [HostWindow.ID] = []
-
-  fileprivate(set) var rows: Int = 0
-  fileprivate(set) var columns: Int = 0
+  fileprivate var grid: HostGrid? = nil
 
   fileprivate init(uuid: String, visibleFrame frame: CGRect) {
     self.uuid = uuid
@@ -287,8 +364,14 @@ class Screen {
 
   // Public API
 
-  var count: Int { hosts.count }
-  
+  var hostCount: Int { grid?.count ?? 0 }
+  var rows: Int { grid?.rows ?? 0 }
+  var columns: Int { grid?.columns ?? 0 }
+
+  fileprivate func contains(host: HostWindow.ID) -> Bool {
+    return false
+  }
+
   func set(rows: Int) {
     requestedRows = rows
     requestedColumns = 0
@@ -322,159 +405,44 @@ class Screen {
   }
 
   fileprivate func set(hosts: [HostWindow.ID], ratio: CGFloat) {
-    self.hosts = hosts
-
-    // Update Grid
-    if (!hosts.isEmpty) {
-      updateGrid(for: ratio)
-    } else {
-      rows = 0
-      columns = 0
+    guard !hosts.isEmpty else {
+      grid = nil
+      return
     }
-  }
 
-  private func updateGrid(for ratio: CGFloat) {
     let count = hosts.count
     if requestedColumns > 0 {
-      columns = min(requestedColumns, count)
-      rows = Int(ceil(Float(count) / Float(columns)))
+      let columns = min(requestedColumns, count)
+      let rows = Int(ceil(Float(count) / Float(columns)))
+      grid = HostGrid.byRow(hosts: hosts, rows: rows, columns: columns)
     } else if requestedRows > 0 {
-      rows = min(requestedRows, count)
-      columns = Int(ceil(Float(count) / Float(rows)))
+      let rows = min(requestedRows, count)
+      let columns = Int(ceil(Float(count) / Float(rows)))
+      grid = HostGrid.byColumns(hosts: hosts, rows: rows, columns: columns)
     } else if (ratio > 0) {
-      (rows, columns) = getBestLayout(for: ratio, hosts: count, on: frame.size)
+      let (rows, columns) = getBestLayout(for: ratio, hosts: count, on: frame.size)
+      grid = HostGrid.byRow(hosts: hosts, rows: rows, columns: columns)
     } else {
-      rows = 0
-      columns = 0
-    }
-  }
-
-  struct ColumnsLayout: ScreenGrid {
-    let columns: Int
-    private var cursor = 0
-
-    init(columns: Int) {
-      self.columns = columns
-    }
-
-    mutating func next() -> (Int, Int) {
-      let pos = cursor
-      cursor += 1
-      return (pos % columns, pos / columns)
-    }
-  }
-
-  struct RowsLayout: ScreenGrid {
-    let rows: Int
-    let columns: Int
-    private let lastColumnsCount: Int
-
-    private var column = 0
-    private var row = 0
-
-    init(rows: Int, columns: Int, hostCount: Int) {
-      self.rows = rows
-      self.columns = columns
-      // count of hosts in the last column
-      lastColumnsCount = hostCount.isMultiple(of: rows) ? rows : hostCount % rows
-    }
-
-    mutating func next() -> (Int, Int) {
-      let x = column
-      let y = row
-      
-      // Compute next position
-      if (column == columns - 1) // was last column
-          || (column == columns - 2 && row >= lastColumnsCount) { // second last column, and last column is empty for this row.
-        // wrap around
-        row += 1
-        column = 0
-      } else {
-        column += 1
-      }
-
-      return (x, y)
-    }
-  }
-
-  fileprivate func grid() -> any ScreenGrid {
-    if (requestedRows > 0 && requestedColumns <= 0) {
-      // populate by columns instead of populating by rows if row count requested
-      // i.e. 5 hosts in 4 columns mode will result in 1 full row of 4 hosts, and a second row with one host
-      // in rows mode, it should be 1 row with 2 hosts, and 3 rows with one host.
-      return RowsLayout(rows: rows, columns: columns, hostCount: hosts.count)
-    } else {
-      return ColumnsLayout(columns: columns)
+      grid = nil
     }
   }
 
   fileprivate var area: CGFloat { frame.width * frame.height }
 
   func getHostAbove(_ host: HostWindow.ID) -> HostWindow.ID? {
-    guard columns > 0,
-          let idx = hosts.firstIndex(of: host) else {
-      return nil
-    }
-    let row = idx / columns
-    // This is not the first row -> return host above
-    if row > 0 {
-      return hosts[idx - columns]
-    }
-
-    // Lookup the last row containing a value in column
-    let column = idx % columns
-    // Compute index of the host above
-    let wrapIdx = (rows - 1) * columns + column
-    if wrapIdx >= hosts.endIndex {
-      return (wrapIdx - columns) != idx ? hosts[wrapIdx - columns] : nil
-    }
-    return hosts[wrapIdx]
+    return grid?.getHostAbove(host)
   }
 
   func getHostBelow(_ host: HostWindow.ID) -> HostWindow.ID? {
-    guard columns > 0,
-          let idx = hosts.firstIndex(of: host) else {
-      return nil
-    }
-    let row = idx / columns
-    // Lookup the last row containing a value in column
-    let column = idx % columns
-
-    // Compute index of the previous host
-    let belowIdx = (row + 1) * columns + column
-    if belowIdx >= hosts.endIndex {
-      return (column != idx) ? hosts[column] : nil
-    }
-    return hosts[belowIdx]
+    return grid?.getHostBelow(host)
   }
 
-  func getHostAfter(_ host: HostWindow.ID) -> HostWindow.ID? {
-    guard columns > 0,
-          let idx = hosts.firstIndex(of: host) else {
-      return nil
-    }
-    let column = idx % columns
-    // wrap around when reaching end of row
-    if column == columns - 1 || idx == hosts.endIndex - 1 {
-      return column > 0 ? hosts[idx - column] : nil
-    }
-    return hosts[idx + 1]
+  func getHostLeft(of host: HostWindow.ID) -> HostWindow.ID? {
+    return grid?.getHostLeft(of: host)
   }
 
-  func getHostBefore(_ host: HostWindow.ID) -> HostWindow.ID? {
-    guard columns > 0,
-          let idx = hosts.firstIndex(of: host) else {
-      return nil
-    }
-    let column = idx % columns
-    // wrap around when reaching start of row
-    if column == 0 {
-      let wrapIdx = min(idx + columns - 1, hosts.endIndex - 1)
-      return (wrapIdx != idx) ? hosts[wrapIdx] : nil
-    }
-    return hosts[idx - 1]
+  func getHostRight(of host: HostWindow.ID) -> HostWindow.ID? {
+    return grid?.getHostRight(of: host)
   }
 }
-
-
 
