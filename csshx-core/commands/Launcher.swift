@@ -65,10 +65,6 @@ public struct Launcher: ParsableCommand {
       }
     }
     
-    //      if settings.space >= 0 {
-    //        tab.space = settings.space
-    //      }
-    
     // Install signal handler before stating master
     
     // Note: DispatchSourceSignal is based on kevent, and is independent of signal()/sigaction().

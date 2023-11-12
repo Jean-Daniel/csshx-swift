@@ -27,7 +27,8 @@ final class WindowLayoutManagerTests: XCTestCase {
     XCTAssertEqual(1, columns)    
   }
 
-  // Three hosts should not fallback to 4x4, as it waste a quarter of screen space, even if the ratio is better.
+  // Three hosts should not fallback to 4x4, as it waste a quarter of the screen space,
+  // even if the ratio is better.
   func testThreeHosts() throws {
     let (rows, columns) = getBestLayout(for: 16.0 / 9.0, hosts: 3, on: CGSize(width: 1024, height: 768))
     XCTAssertEqual(3, rows)

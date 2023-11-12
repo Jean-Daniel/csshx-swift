@@ -41,9 +41,6 @@ struct LayoutOptions: ParsableArguments {
   })
   var screens: Array<Int>?
 
-  @Option(help: "Sets the space (if Spaces is enabled) on which to display the terminals. Defaults to current space")
-  var space: Int?
-
   @Flag(help: "Sort the host windows, by hostname, before opening them.")
   var sortHosts = false
 
@@ -72,8 +69,6 @@ struct LayoutOptions: ParsableArguments {
   var hostWindowProfile: String?
 
   func override(_ settings: inout Settings) {
-    // if let space { settings.space = Int32(space) }
-
 //    if let screens { settings.layout.screens = screens }
     if let columns { settings.layout.columns = columns }
     if let rows { settings.layout.rows = rows }

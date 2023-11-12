@@ -120,25 +120,6 @@ extension Terminal {
       window.closeSaving(TerminalSaveOptionsNo, savingIn: nil)
     }
 
-    var space: Int32 {
-      get {
-//        var ws: CGSWorkspace = -1
-//        let error: CGError = CGSGetWindowWorkspace(CGSDefaultConnection(), windowId, &ws)
-//        guard error == .success else {
-//          logger.warning("error while querying window space: \(error.rawValue)")
-//          return -1
-//        }
-        return 0
-      }
-      nonmutating set {
-//        var wids = windowId
-//        let error = CGSMoveWorkspaceWindowList(CGSDefaultConnection(), &wids, 1, CGSWorkspace(newValue))
-//        if error != .success {
-//          logger.warning("error while setting window space: \(error.rawValue)")
-//        }
-      }
-    }
-
     func setProfile(_ profile: String) -> Bool {
       guard let settings = terminal.settingsSets().object(withName: profile) as? TerminalSettingsSet else {
         // should never fails as it only create an ObjectDescriptor

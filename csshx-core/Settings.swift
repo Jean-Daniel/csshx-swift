@@ -247,8 +247,6 @@ struct Settings {
 
   var dummy: Bool = false
   // Windows Layout
-  // var space: Int32 = -1
-
   var layout = WindowLayoutManager.Config()
   var hostWindow = HostWindow.Config()
 
@@ -338,8 +336,6 @@ extension Settings {
     "interleave": .set(\Settings.interleave),
 
     // Screen Layout
-    // "space": .set(\Settings.space),
-
     "tile_x": .set(\Settings.layout.columns),
     "columns": .set(\Settings.layout.columns),
     "tile_y": .set(\Settings.layout.rows),
