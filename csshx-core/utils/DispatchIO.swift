@@ -66,13 +66,13 @@ extension IOListener {
     if Darwin.listen(fd, 256) != 0 {
       throw POSIXError.errno
     }
-
+    
     return IOListener(socket: fd, path: socket)
   }
 }
 
 extension DispatchIO {
-
+  
   func read(_ block: @escaping (DispatchData) -> Void, whenDone: @escaping ((any Error)?) -> Void) {
     read(offset: 0, length: .max, queue: .main) { [self] done, data, error in
       if error == ECANCELED {
@@ -95,7 +95,7 @@ extension DispatchIO {
         // Ignore partial write
         return
       }
-
+      
       if error == 0 {
         whenDone(nil)
       } else {

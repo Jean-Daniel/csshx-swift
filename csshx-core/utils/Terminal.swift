@@ -11,9 +11,9 @@ import System
 let TerminalBundleId = "com.apple.Terminal"
 
 struct Terminal {
-
+  
   private static var _shell: String? = nil
-
+  
   static var shell: String {
     if let shell = _shell {
       return shell
@@ -48,5 +48,5 @@ struct Terminal {
     }
     return _shell!
   }
-
+  
 }

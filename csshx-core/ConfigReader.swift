@@ -11,16 +11,16 @@ import RegexBuilder
 
 
 extension Settings {
-
+  
   // Load settings and create HostList used to resolve target hosts.
   static func load(_ hosts: [String], options: Config, sshOptions: SSHOptions, layoutOptions: LayoutOptions) throws -> (Settings, HostList) {
     var hostList = HostList()
     var settings = Settings()
-
+    
     for host in hosts {
       try hostList.add(host, command: nil)
     }
-
+    
     do {
       try hostList.load(clustersFile: "/etc/clusters")
     } catch CocoaError.fileNoSuchFile {
@@ -28,13 +28,13 @@ extension Settings {
     } catch {
       throw error
     }
-
+    
     // Load predefined csshrc files
     for file in ["/etc/csshrc", "~/.csshrc"] {
       do {
         try settings.load(csshrc: FilePath(file), hosts: &hostList)
       } catch CocoaError.fileNoSuchFile {
-        logger.debug("\(file) does not exists. Skipping it.")
+        logger.debug("\(file, privacy: .public) does not exists. Skipping it.")
       } catch {
         throw error
       }
@@ -44,22 +44,22 @@ extension Settings {
       // Failing if file specified by user does not exists.
       try hostList.load(hostFile: FilePath(file))
     }
-
+    
     for file in options.configFiles {
       // Failing if file specified by user does not exists.
       try settings.load(csshrc: FilePath(file), hosts: &hostList)
     }
-
+    
     options.override(&settings)
     sshOptions.override(&settings)
     layoutOptions.override(&settings)
     return (settings, hostList)
   }
-
+  
   mutating func load(csshrc file: FilePath, hosts: inout HostList) throws {
     var clusters = Set<String>()
     var settings = [String:String]()
-
+    
     let comment = /#.*$/
     try file.readLines { line in
       guard let match = line.replacing(comment, with: "").wholeMatch(of: /^\s*(\S+)\s*=\s*(.*?)\s*$/) else {
@@ -86,16 +86,16 @@ extension Settings {
         settings[String(key)] = String(value)
       }
     }
-
+    
     for cluster in clusters {
       // For each cluster declared in the settings
       guard let clusterHosts = settings[cluster]?.split(separator: /\s+/), !clusterHosts.isEmpty else {
-        logger.warning("No hosts defined for cluster \(cluster) in \(file)")
+        logger.warning("No hosts defined for cluster \(cluster, privacy: .public) in \(file, privacy: .public)")
         continue
       }
       hosts.add(clusterHosts.map(String.init), to: cluster)
     }
-
+    
     for (key, value) in settings where !clusters.contains(key) {
       try set(String(key), value: String(value))
     }

@@ -9,7 +9,7 @@ import ArgumentParser
 import Foundation
 
 public struct Launcher: ParsableCommand {
-
+  
   public static var configuration = CommandConfiguration(
     commandName: "csshx",
     abstract: "csshX - Cluster SSH tool using Mac OS X Terminal.app",
@@ -41,7 +41,7 @@ public struct Launcher: ParsableCommand {
   var hosts: [String] = []
   
   public init() {}
-
+  
   public mutating func run() throws {
     logger.info("start launcher")
     

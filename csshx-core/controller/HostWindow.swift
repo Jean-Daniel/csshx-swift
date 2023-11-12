@@ -8,24 +8,24 @@
 import Foundation
 
 class HostWindow: Equatable {
-
+  
   struct Config {
     var selectedTextColor: Terminal.Color?
     var selectedBackgroundColor: Terminal.Color = Terminal.Color(red: 17990, green: 35209, blue: 53456)
-
+    
     var disabledTextColor: Terminal.Color = Terminal.Color(red: 37779, green: 37779, blue: 37779)
     var disabledBackgroundColor: Terminal.Color?
   }
-
+  
   let tab: Terminal.Tab
   let config: Config
   let host: Target
   let tty: dev_t
-
+  
   // Terminal Tab + Socket Connection
   var whenDone: (((any Error)?) -> Void)? = nil
   var connection: DispatchIO? = nil
-
+  
   var enabled: Bool = true {
     didSet {
       if (oldValue != enabled) {
@@ -33,9 +33,9 @@ class HostWindow: Equatable {
       }
     }
   }
-
+  
   var disabled: Bool { !enabled }
-
+  
   var selected: Bool = false {
     didSet {
       if (oldValue != selected) {
@@ -43,14 +43,14 @@ class HostWindow: Equatable {
       }
     }
   }
-
+  
   init(tab: Terminal.Tab, host: Target, tty: dev_t, config: Config) {
     self.tab = tab
     self.host = host
     self.tty = tty
     self.config = config
   }
-
+  
   private func setColors() {
     if selected {
       tab.setTextColor(color: config.selectedTextColor)
@@ -63,14 +63,14 @@ class HostWindow: Equatable {
       tab.setBackgroundColor(color: nil)
     }
   }
-
+  
   func terminate() {
     connection?.close(flags: .stop)
     connection = nil
     // Closing window in case the profile does not close window automatically
     // tab.close()
   }
-
+  
   static func == (lhs: HostWindow, rhs: HostWindow) -> Bool {
     return lhs.host == rhs.host && lhs.tab == rhs.tab
   }

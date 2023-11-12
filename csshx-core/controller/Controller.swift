@@ -12,46 +12,46 @@ import Foundation
 
 // MARK: -
 class Controller {
-
+  
   let tab: Terminal.Tab?
-
+  
   let socket: String
   let settings: Settings
-
+  
   private var term: termios? = nil
-
+  
   var hosts: [HostWindow] = []
   var windowManager: WindowLayoutManager
-
+  
   private var inputMode: any InputModeProtocol = InputMode.Starting()
-
+  
   private var buffer: [UInt8] = []
   private var stdin: DispatchIO? = nil
-
+  
   fileprivate var listener: IOListener? = nil
-
+  
   init(tab: Terminal.Tab?, socket: String, settings: Settings) throws {
     self.tab = tab
     self.socket = socket
     self.settings = settings
     buffer.reserveCapacity(256)
-
+    
     windowManager = WindowLayoutManager(config: settings.layout)
-
+    
     setControllerColors()
     layout()
   }
-
+  
   func close() {
     stdin?.close(flags: .stop)
     listener?.close()
     hosts.forEach { $0.terminate() }
   }
-
+  
   // MARK: - Socket
   private func onBytesAvailable(_ bytes: DispatchData) {
     buffer.append(contentsOf: bytes)
-
+    
     // if mode changed and buffer is not empty -> reparse
     while (!buffer.isEmpty) {
       do {
@@ -63,61 +63,61 @@ class Controller {
           break
         }
       } catch {
-        logger.error("error while processing input: \(error)")
+        logger.error("error while processing input: \(error, privacy: .public)")
         close()
         return
       }
     }
   }
-
+  
   func send(bytes: some ContiguousBytes) {
     let data = bytes.withUnsafeBytes(DispatchData.init(bytes:))
     for host in hosts {
       send(bytes: data, to: host)
     }
   }
-
+  
   func send(bytes: some ContiguousBytes, to host: HostWindow) {
     let data = bytes.withUnsafeBytes(DispatchData.init(bytes:))
     send(bytes: data, to: host)
   }
-
+  
   private func send(bytes: DispatchData, to host: HostWindow) {
     // Skip disabled hosts, and host without valid connection
     guard host.enabled, let connection = host.connection else { return }
-
+    
     connection.write(bytes) { [self] error in
       // on error -> remove host from the host list
       if error != nil {
-        logger.warning("error while forwarding data to host: \(host.host.hostname)")
+        logger.warning("error while forwarding data to host: \(host.host.hostname, privacy: .public)")
         terminate(host: host)
       }
     }
   }
-
+  
   // MARK: - Input
   func prompt() {
     guard stdin != nil else { return }
-
+    
     stty.clear()
     let prompt = inputMode.prompt(self)
     fwrite(str: prompt)
   }
-
+  
   // Note: private so an InputMode cannot try to set it in a callback
   // causing an 'inputMode' exclusive access violation.
   private func setInputMode(_ mode: some InputModeProtocol) throws {
     guard mode.id != inputMode.id else { return }
-
+    
     logger.info("Switching input mode")
     inputMode = mode
-
+    
     try setRawInputMode(inputMode.raw)
     // Must enable before prompt
     try inputMode.onEnable(self)
     prompt()
   }
-
+  
   private func setRawInputMode(_ value: Bool) throws {
     if term == nil, value {
       // saving current tty state, and switch to raw mode
@@ -128,12 +128,12 @@ class Controller {
       self.term = nil
     }
   }
-
+  
   func runInputLoop() throws {
     guard stdin == nil else {
       return
     }
-
+    
     let input = DispatchIO(type: .stream,
                            fileDescriptor: STDIN_FILENO,
                            queue: .main, cleanupHandler: { [self] error in
@@ -146,46 +146,46 @@ class Controller {
     // disable buffering
     input.setLimit(lowWater: 1)
     stdin = input
-
+    
     // Initialize input mode
     try setRawInputMode(inputMode.raw)
     try inputMode.onEnable(self)
     prompt()
-
+    
     //      let winch = DispatchSource.makeSignalSource(signal: SIGWINCH)
     //      winch.setEventHandler {
     //        May be use to show live frame size in bounds mode.
     //        logger.debug("SIGWINCH event")
     //      }
     //      winch.resume()
-
+    
     input.read { [self] bytes in
       onBytesAvailable(bytes)
     } whenDone: { [self] error in
       // unreachable, as stdin should never be done.
       if let error {
-        logger.warning("stdin done with error: \(error)")
+        logger.warning("stdin done with error: \(error, privacy: .public)")
         close()
       }
     }
   }
-
+  
   // MARK: - Layout
   func layout() {
     guard let tab else { return }
-
+    
     windowManager.layout(controller: tab, hosts: hosts)
     // Always make sure the controller window is frontmost window
     tab.window.frontmost = true
   }
-
+  
   func setControllerColors() {
     guard let tab else { return }
-
+    
     if let color = settings.controllerBackground {
       tab.setBackgroundColor(color: color)
     }
-
+    
     if let color = settings.controllerTextColor {
       tab.setTextColor(color: color)
     }
@@ -204,16 +204,16 @@ private func getPeerProcessId(socket: Int32) -> pid_t {
 }
 
 extension Controller {
-
+  
   func listen() throws {
     guard listener == nil else {
       throw POSIXError(.EBUSY)
     }
-
+    
     logger.info("start listening on \(self.socket)")
     let srv = try IOListener.listen(socket: socket)
     listener = srv
-
+    
     srv.startWaiting { [self] result in
       switch (result) {
         case .success(let fd):
@@ -222,7 +222,7 @@ extension Controller {
             Darwin.close(fd)
             return
           }
-
+          
           logger.info("[\(pid)] did open connection")
           let tty = Termios.getProcessTTY(pid)
           guard tty > 0 else {
@@ -233,12 +233,12 @@ extension Controller {
           logger.info("[\(pid)] connection tty: \(tty)")
           didOpen(socket: fd, tty: tty)
         case .failure(let error):
-          logger.error("server socket error: \(error)")
+          logger.error("server socket error: \(error, privacy: .public)")
           close()
       }
     }
   }
-
+  
   func ready() throws {
     if inputMode is InputMode.Starting {
       layout()
@@ -257,17 +257,17 @@ extension Controller {
     // It is more accurate to take it from a new window than trying to infer it from
     // the tab profile rows/columns count, as the row/columns size ratio depends the used font.
     windowManager.setDefaultWindowRatio(from: tab)
-
+    
     let tty = tab.tty
     guard tty > 0 else {
       throw ScriptingBridgeError()
     }
-    logger.info("[\(target.hostname)] opening window: \(tab.windowId)/\(tab.tabIdx) (tty: \(tty))")
-
+    logger.info("[\(target.hostname, privacy: .public)] opening window: \(tab.windowId)/\(tab.tabIdx) (tty: \(tty))")
+    
     let host = HostWindow(tab: tab, host: target, tty: tty, config: settings.hostWindow)
     host.whenDone = done
     hosts.append(host)
-
+    
     let csshx = URL(filePath: CommandLine.arguments[0]).standardizedFileURL
     var args = [
       csshx.path, "--", "host",
@@ -287,7 +287,7 @@ extension Controller {
       args.append("--dummy")
     }
     // TODO: ssh args and remote command
-
+    
     do {
       try tab.run(args: args, clear: true, exec: !settings.debug)
     } catch {
@@ -296,8 +296,8 @@ extension Controller {
       done(error)
       return
     }
-    logger.info("did start csshx \(target.hostname)")
-
+    logger.info("did start csshx \(target.hostname, privacy: .public)")
+    
     // Simple timeout scheme. Instead of scheduling a DispatchSourceTimer, and having to manage it
     // unconditonally schedule a block after delay, and test if the op is done when this block is executed.
     DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5)) { [weak self] in
@@ -308,7 +308,7 @@ extension Controller {
       }
     }
   }
-
+  
   private func didOpen(socket: Int32, tty: dev_t) {
     // lookup matching host window and attach the connection
     guard let host = hosts.first(where: { $0.tty == tty }) else {
@@ -326,17 +326,17 @@ extension Controller {
       host.whenDone = nil
       done(nil)
     }
-
+    
     // Start a monitoring task. An host is not supposed to write in the connection,
     // but it help us detect when the connection is closed.
-    host.connection?.read {data in
-      logger.warning("[\(host)] discarding unexpected input: \(data.count) bytes")
-    } whenDone: {  [self] error in
-      logger.warning("[\(host)] connection lost")
+    host.connection?.read { data in
+      logger.warning("[\(host, privacy: .public)] discarding unexpected input: \(data.count) bytes")
+    } whenDone: { [self] error in
+      logger.warning("[\(host, privacy: .public)] connection lost")
       terminate(host: host)
     }
   }
-
+  
   func terminate(host: HostWindow) {
     guard let idx = hosts.firstIndex(of: host) else {
       return
