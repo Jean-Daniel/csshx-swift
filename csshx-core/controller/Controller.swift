@@ -320,11 +320,20 @@ extension Controller {
                                  fileDescriptor: socket,
                                  queue: DispatchQueue.main,
                                  cleanupHandler: { error in Darwin.close(socket) })
-
+    
+    // Notify the host it is connected
+    let handshake: [UInt8] = [ 0 ]
+    handshake.withUnsafeBytes { bytes in
+      send(bytes: DispatchData(bytes: bytes), to: host)
+    }
+    
     if let done = host.whenDone {
-      // TODO: update prompt if not ready yet.
       host.whenDone = nil
       done(nil)
+      // raw input mode do not show user input and can safely reprompt
+      if inputMode.raw {
+        prompt()
+      }
     }
     
     // Start a monitoring task. An host is not supposed to write in the connection,
@@ -345,6 +354,9 @@ extension Controller {
     if (hosts.isEmpty) {
       // Terminate input loop if is running
       close()
+    }
+    if inputMode.raw {
+      prompt()
     }
   }
 }

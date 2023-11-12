@@ -42,10 +42,33 @@ public struct HostCommand: ParsableCommand {
     } else {
       print("hostname: \(options.hostname)")
     }
-
+    
+    // Simple timeout
+    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5)) {
+      // If handshake still not done -> close the connection.
+      if !client.isReady {
+        logger.warning("client handshake timeout")
+        client.close()
+      }
+    }
+    
     // Start listening for incoming data from master
     client.connection.read { data in
       for c in data {
+        if !client.isReady {
+          // Handshake done -> mark the client ready,
+          // close the connection if ssh already failed or if handshake data is not valid (0).
+          if c == 0 {
+            logger.warning("client ready")
+            client.isReady = true
+          } else {
+            logger.warning("invalid handshake byte")
+            client.close()
+            return
+          }
+          continue
+        }
+        
         withUnsafePointer(to: c) { ptr in
           do {
             if !dummy {
@@ -75,7 +98,7 @@ public struct HostCommand: ParsableCommand {
         } else {
           logger.info("ssh exit")
         }
-        client.close()
+        client.close(onlyIfReady: true)
       }
     }
     
@@ -86,7 +109,15 @@ public struct HostCommand: ParsableCommand {
 private class SSHWrapper {
   
   var pid: pid_t = 0
-
+  
+  var isReady: Bool = false {
+    didSet {
+      if (pid <= 0) {
+        close()
+      }
+    }
+  }
+  
   let connection: DispatchIO
   
   init(socket: String) throws {
@@ -96,21 +127,24 @@ private class SSHWrapper {
                                  queue: DispatchQueue.main,
                                  cleanupHandler: { error in
       Darwin.close(fd)
+      // terminate the process
+      Foundation.exit(0)
     })
     // We want to process data in real-time. Do not buffer input.
     self.connection.setLimit(lowWater: 1)
   }
-
-  func close() {
+  
+  func close(onlyIfReady: Bool = false) {
     // Ensure ssh is terminated
     if (pid > 0) {
       kill(pid, SIGTERM)
       waitpid(pid, nil, 0)
+      pid = 0
     }
-    // Terminate master connection
-    connection.close(flags: .stop)
-    // terminate the process (even if connection closing is not done)
-    Foundation.exit(0)
+    if isReady || !onlyIfReady {
+      // Terminate master connection
+      connection.close(flags: .stop)
+    }
   }
   
   func start(options: HostCommand.Options) throws {
