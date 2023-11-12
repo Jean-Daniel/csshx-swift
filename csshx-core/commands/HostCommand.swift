@@ -58,11 +58,15 @@ public struct HostCommand: ParsableCommand {
         if !client.isReady {
           // Handshake done -> mark the client ready,
           // close the connection if ssh already failed or if handshake data is not valid (0).
-          if c == 0 {
+          if c == 0 && (client.pid > 0 || dummy) {
             logger.warning("client ready")
             client.isReady = true
           } else {
-            logger.warning("invalid handshake byte")
+            if c != 0 {
+              logger.warning("invalid handshake byte")
+            } else {
+              logger.warning("ssh died already. terminating")
+            }
             client.close()
             return
           }
@@ -110,13 +114,7 @@ private class SSHWrapper {
   
   var pid: pid_t = 0
   
-  var isReady: Bool = false {
-    didSet {
-      if (pid <= 0) {
-        close()
-      }
-    }
-  }
+  var isReady: Bool = false
   
   let connection: DispatchIO
   
