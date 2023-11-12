@@ -39,6 +39,23 @@ private func ~= (pattern: UInt8, value: inout [UInt8]) -> Bool {
   return false
 }
 
+extension Array<UInt8> {
+  // TODO: other escape sequences
+  mutating func dropEscapeSequence() -> Bool {
+    guard !isEmpty else { return false }
+    
+    if self[0] == 0x5B {
+      // CSI escape sequence.
+      removeFirst()
+      
+      // Not sure about how to process it accurately. Dropping everything in range of supported CSI chars.
+      trimPrefix { (0x20...0x7E).contains($0) }
+      return true
+    }
+    return false
+  }
+}
+
 protocol InputModeProtocol: Equatable, Identifiable<String> {
   var raw: Bool { get }
   
@@ -85,12 +102,7 @@ extension InputMode {
 }
 
 extension InputMode {
-
-  private static let csiCursorCode = Regex {
-    "\u{1b}["
-    Capture("A"..."D")
-  }
-
+  
   struct Input: InputModeProtocol {
     
     var id: String { "input" }
@@ -235,22 +247,28 @@ extension InputMode {
         ctrl.close()
       } else if 0x1b ~= input {
         // escape (\e)
-        // TODO: if is escape sequence -> delete it and beep.
-        // else switch to input mode
-        return InputMode.Input()
+        
+        if input.dropEscapeSequence() {
+          // if is escape sequence -> delete it and beep.
+          beep()
+          return nil
+        } else {
+          // else switch to input mode
+          return InputMode.Input()
+        }
       } else {
         input.removeAll()
         beep()
       }
-  /*
-   if ($buffer =~ s/^ //) {
+      /*
+       if ($buffer =~ s/^ //) {
        my @enabled = grep {
-           (! $_->disabled) && $_
+       (! $_->disabled) && $_
        } CsshX::Master::Socket::Slave->slaves;
        if (@enabled == 1) { $enabled[0]->select_next(); }
        return $obj->set_mode_and_parse('input', $buffer);
-   }
-   */
+       }
+       */
       return nil
     }
   }
@@ -269,7 +287,7 @@ extension InputMode {
     
     func prompt(_ ctrl: Controller) -> String {
       "Move and resize master with mouse to define bounds: (Enter to accept, Esc to cancel)\r\n" +
-      "(Also Arrow keys of h,j,k,l can move window, hold Ctrl to resize)\r\n" +
+      "(Also Arrow keys of i,j,k,l can move window, hold Shift to resize)\r\n" +
       "[r]eset to default, [f]ull screen, [p]rint screens configuration"
     }
     
@@ -363,39 +381,21 @@ extension InputMode {
       
       else if 0x1b ~= input {
         // escape (\e)
-        // TODO: if is escape sequence -> delete it and beep.
-        // else switch to input mode
-        ctrl.setControllerColors()
-        ctrl.layout()
-        return InputMode.Input()
+        
+        if input.dropEscapeSequence() {
+          // if is escape sequence -> delete it and beep.
+          beep()
+          return nil
+        } else {
+          // else switch to input mode
+          ctrl.setControllerColors()
+          ctrl.layout()
+          return InputMode.Input()
+        }
       } else {
         input.removeAll()
         beep()
       }
-
-      /*
-       my ($obj, $buffer) = @_;
-       while (length $buffer) {
-           #print join(' ', map { unpack("H2", $_) } split //, $buffer)."\r\n";
-           if ($buffer =~ s/^(\014|\e\[5C)//) {
-               $obj->master->grow(1,0);
-           } elsif ($buffer =~ s/^(\010|\e\[5D)//) {
-               $obj->master->grow(-1,0);
-           } elsif ($buffer =~ s/^(\012|\e\[5A)//) {
-               $obj->master->grow(0,1);
-           } elsif ($buffer =~ s/^(\013|\e\[5B)//) {
-               $obj->master->grow(0,-1);
-           } elsif ($buffer =~ s/^\r//) {
-               $obj->master->bounds_as_size;
-               $obj->master->format_master;
-               $obj->master->arrange_windows;
-               return $obj->set_mode_and_parse('input', $buffer);
-           } elsif ($buffer =~ s/^r//) {
-               $obj->master->reset_bounds;
-               $obj->master->size_as_bounds;
-           }
-       }
-       */
       return nil
     }
   }
@@ -492,9 +492,15 @@ extension InputMode {
       
       else if 0x1b ~= input {
         // escape (\e)
-        // TODO: if is escape sequence -> delete it and beep.
-        // else switch to input mode
-        return InputMode.Input()
+        
+        if input.dropEscapeSequence() {
+          // if is escape sequence -> delete it and beep.
+          beep()
+          return nil
+        } else {
+          // else switch to input mode
+          return InputMode.Input()
+        }
       } else {
         input.removeAll()
         beep()
@@ -526,8 +532,8 @@ extension InputMode {
       // hostname
       if "h" ~= input {
         ctrl.hosts.sort { h1, h2 in
-          // TODO: sort by port and username ?
-          h1.host.hostname < h2.host.hostname
+          // sort by hostname, port, username
+          (h1.host.hostname, h1.host.port ?? 0, h1.host.user ?? "") < (h2.host.hostname, h2.host.port ?? 0, h2.host.user ?? "")
         }
         ctrl.layout()
         return InputMode.Input()
@@ -544,9 +550,15 @@ extension InputMode {
       
       else if 0x1b ~= input {
         // escape (\e)
-        // TODO: if is escape sequence -> delete it and beep.
-        // else switch to input mode
-        return InputMode.Input()
+        
+        if input.dropEscapeSequence() {
+          // if is escape sequence -> delete it and beep.
+          beep()
+          return nil
+        } else {
+          // else switch to input mode
+          return InputMode.Input()
+        }
       } else {
         input.removeAll()
         beep()
@@ -681,10 +693,17 @@ extension InputMode {
       
       else if 0x1b ~= input || 0x0d ~= input {
         // escape (\e)
-        // TODO: if is escape sequence -> delete it and beep.
-        // else switch to input mode
-        ctrl.hosts.forEach { $0.selected = false }
-        return InputMode.Input()
+        
+        // Should always returns false for 0x0d
+        if input.dropEscapeSequence() {
+          // if is escape sequence -> delete it and beep.
+          beep()
+          return nil
+        } else {
+          // else switch to input mode
+          ctrl.hosts.forEach { $0.selected = false }
+          return InputMode.Input()
+        }
       } else {
         input.removeAll()
         beep()
@@ -809,13 +828,18 @@ extension InputMode {
         screen?.set(columns: 0)
         ctrl.layout()
       }
-
-      else if 0x1b ~= input || 0x0d ~= input {
+      
+      else if 0x1b ~= input {
         // escape (\e)
-        // TODO: if is escape sequence -> delete it and beep.
-        // else switch to input mode
-        ctrl.hosts.forEach { $0.selected = false }
-        return InputMode.Input()
+        
+        if input.dropEscapeSequence() {
+          // if is escape sequence -> delete it and beep.
+          beep()
+          return nil
+        } else {
+          // else switch to input mode
+          return InputMode.Input()
+        }
       } else {
         input.removeAll()
         beep()
