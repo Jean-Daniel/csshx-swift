@@ -11,6 +11,9 @@
 #import <sys/un.h>
 #import <sys/sysctl.h>
 
+extern int pthread_chdir_np(char *path);
+extern int pthread_fchdir_np(int fd);
+
 @implementation Termios
 
 + (dev_t)getProcessTTY:(pid_t)pid {
@@ -39,17 +42,20 @@
 @implementation Socket
 
 static
-dispatch_fd_t _socket(NSString *path, struct sockaddr_un *sockaddr, NSError **error) {
-  const char *fspath = [path fileSystemRepresentation];
-  if (!fspath || !sockaddr) {
+dispatch_fd_t _socket(NSString *path, NSError **error, int (^op)(dispatch_fd_t, const struct sockaddr_un *, socklen_t sock_len)) {
+  NSString *dir = [path stringByDeletingLastPathComponent];
+  NSString *filename = [path lastPathComponent];
+
+  if (!dir || !filename || !op) {
     *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:EINVAL userInfo:nil];
     return 0;
   }
 
-  sockaddr->sun_len = sizeof(*sockaddr);
-  sockaddr->sun_family = AF_UNIX;
+  struct sockaddr_un sockaddr = {};
+  sockaddr.sun_len = sizeof(sockaddr);
+  sockaddr.sun_family = AF_UNIX;
   // Note: in case the length limitation is an issue, consider using chdir and relative path.
-  if (strlcpy(sockaddr->sun_path, fspath, sizeof(sockaddr->sun_path)) >= sizeof(sockaddr->sun_path)) {
+  if (strlcpy(sockaddr.sun_path, filename.fileSystemRepresentation, sizeof(sockaddr.sun_path)) >= sizeof(sockaddr.sun_path)) {
     *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:ENAMETOOLONG userInfo:nil];
     return 0;
   }
@@ -66,49 +72,52 @@ dispatch_fd_t _socket(NSString *path, struct sockaddr_un *sockaddr, NSError **er
     return 0;
   }
 
+  if (pthread_chdir_np((char *)dir.fileSystemRepresentation) < 0) {
+    *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
+    close(sock);
+    return 0;
+  }
+
+  int err = op(sock, &sockaddr, socklen(&sockaddr));
+  if (err != 0) {
+    *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
+    pthread_fchdir_np(-1);
+    close(sock);
+    return 0;
+  }
+
+  pthread_fchdir_np(-1);
   return sock;
 }
-
-
 
 static inline socklen_t socklen(struct sockaddr_un *addr) {
   return (socklen_t)SUN_LEN(addr);
 }
 
 + (dispatch_fd_t)connect:(NSString *)path error:(NSError **)error {
-  struct sockaddr_un addr = {};
-  dispatch_fd_t sock = _socket(path, &addr, error);
-  if (sock <= 0)
-    return 0;
-
-  if (connect(sock, (struct sockaddr *)&addr, socklen(&addr)) < 0) {
-    int err = errno;
-    if (err != EINPROGRESS) {
-      *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:err userInfo:nil];
-      close(sock);
+  return _socket(path, error, ^int(dispatch_fd_t sock, const struct sockaddr_un *addr, socklen_t sock_len) {
+    if (connect(sock, (const struct sockaddr *)addr, sock_len) < 0 && errno != EINPROGRESS) {
+      return errno;
     }
+
     return 0;
-  }
-  return sock;
+  });
 }
 
 + (dispatch_fd_t)bind:(NSString *)path umask:(mode_t)mode error:(NSError **)error {
-  struct sockaddr_un addr = {};
-  dispatch_fd_t sock = _socket(path, &addr, error);
-  if (sock <= 0)
-    return 0;
+  return _socket(path, error, ^int(dispatch_fd_t sock, const struct sockaddr_un *addr, socklen_t sock_len) {
+    // Ensure the file does not exists before binding
+    unlink(addr->sun_path);
 
-  // Ensure the file does not exists before binding
-  unlink([path fileSystemRepresentation]);
-  mode_t mask = umask(mode);
-  if (bind(sock, (struct sockaddr *)&addr, socklen(&addr)) < 0) {
-    *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
+    mode_t mask = umask(mode);
+    if (bind(sock, (const struct sockaddr *)addr, sock_len) < 0) {
+      int err = errno;
+      umask(mask);
+      return err;
+    }
     umask(mask);
-    close(sock);
     return 0;
-  }
-  umask(mask);
-  return sock;
+  });
 }
 
 @end
