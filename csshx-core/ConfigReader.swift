@@ -62,9 +62,10 @@ extension Settings {
     
     let comment = /#.*$/
     try file.readLines { line in
-      guard let match = line.replacing(comment, with: "").wholeMatch(of: /^\s*(\S+)\s*=\s*(.*?)\s*$/) else {
-        if !line.isEmpty {
-          logger.warning("invalid csshrc line: \(line)")
+      let l = line.replacing(comment, with: "")
+      guard let match = l.wholeMatch(of: /^\s*(\S+)\s*=\s*(.*?)\s*$/) else {
+        if !l.isEmpty {
+          logger.warning("invalid csshrc line: \(l, privacy: .public))")
         }
         return
       }
