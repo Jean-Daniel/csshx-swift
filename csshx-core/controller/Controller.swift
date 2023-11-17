@@ -100,8 +100,7 @@ class Controller {
     guard stdin != nil else { return }
     
     stty.clear()
-    let prompt = inputMode.prompt(self)
-    fwrite(str: prompt)
+    fwrite(str: inputMode.prompt(self), file: stdout)
   }
   
   // Note: private so an InputMode cannot try to set it in a callback

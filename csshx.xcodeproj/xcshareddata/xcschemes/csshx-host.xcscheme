@@ -59,6 +59,10 @@
             argument = "--ssh ssh --socket /tmp/csshx.sock  --ssh /usr/bin/false --hostname xenonium.com"
             isEnabled = "YES">
          </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ssh-args  -c -p 2023 -O -f &quot;youpi kai&quot; -- echo &quot;Hello World&quot;"
+            isEnabled = "YES">
+         </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
    <ProfileAction

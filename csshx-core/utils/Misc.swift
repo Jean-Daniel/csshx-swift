@@ -41,17 +41,17 @@ extension POSIXError {
   }
 }
 
-func fwrite(str: String) {
+func fwrite(str: String, file: UnsafeMutablePointer<FILE>) {
   var data = str
   let _ = data.withUTF8 { ptr in
-    fwrite(ptr.baseAddress, ptr.count, 1, stdout)
+    fwrite(ptr.baseAddress, ptr.count, 1, file)
     fflush(stdout)
   }
 }
 
 struct stty {
   
-  static func clear() { fwrite(str: "\u{001b}[1J\u{001b}[0;0H") }
+  static func clear() { fwrite(str: "\u{001b}[1J\u{001b}[0;0H", file: stdout) }
   
   @discardableResult
   static func set(attr: termios) throws -> termios {

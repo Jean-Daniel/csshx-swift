@@ -12,11 +12,13 @@
    * Listen for user input on `stdin` and forward it to the connected `csshx-hosts`
    * Handle user commands when switching to configuration mode.
     
- `csshx-host` is a leighweight ssh wrapper that perform the following tasks:
+ `csshx-host` is a lightweight ssh wrapper that performs the following tasks:
    * Connect to the `csshx-controller` socket.
    * Spawn a `ssh` process.
-   * Notify the controller that it is ready, and start forwarding `controller` input to the `Terminal`.
+   * Wait for the controller signal telling it the connection is ready, and start forwarding `controller` input to the `Terminal`.
  
+To known which `csshx-host` connection matches which Terminal window, the controller extracts the `csshx-host` pid from 
+the unix socket connection and lookup the process info to get its matching tty. It can than and compare it to the Terminal window's TTY. 
 
 ### Differences with csshX
 

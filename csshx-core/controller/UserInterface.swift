@@ -66,7 +66,7 @@ protocol InputModeProtocol: Equatable, Identifiable<String> {
 
 extension InputModeProtocol {
   func beep() {
-    fwrite(str: "\u{007}")
+    fwrite(str: "\u{007}", file: stdout)
   }
   
   static func == (lhs: Self, rhs: Self) -> Bool {
@@ -101,6 +101,7 @@ extension InputMode {
   }
 }
 
+// MARK: -
 extension InputMode {
   
   struct Input: InputModeProtocol {
@@ -161,7 +162,8 @@ extension InputMode {
       
       return "Actions (Esc to exit, \(escape) to send \(escape) to input)\r\n" +
       "[c]reate window, [r]etile, s[o]rt, [e]nable/disable input, e[n]able all, " +
-      // ( (!ctrl.hosts.isEmpty) && (enabled) ? "[Space] Enable next " : "") +
+      // If there is a single host enable, add the 'select next' option.
+      (ctrl.hosts.count > 1 && ctrl.hosts.count(where: { $0.enabled }) == 1 ? "[Space] Enable next " : "") +
       "[t]oggle enabled, [m]inimise, [h]ide, [s]end text, change [b]ounds, " +
       "change [g]rid, e[x]it\r\n";
     }
@@ -242,6 +244,13 @@ extension InputMode {
         return InputMode.Grid()
       }
       
+      else if " " ~= input, ctrl.hosts.count > 1, ctrl.hosts.count(where: { $0.enabled }) == 1 {
+        if let idx = ctrl.hosts.firstIndex(where: { $0.enabled }) {
+          ctrl.hosts[idx].enabled = false
+          ctrl.hosts[(idx + 1) % ctrl.hosts.count].enabled = true
+        }
+        return InputMode.Input()
+      }
       // exit
       else if "x" ~= input {
         ctrl.close()
@@ -260,177 +269,7 @@ extension InputMode {
         input.removeAll()
         beep()
       }
-      /*
-       if ($buffer =~ s/^ //) {
-       my @enabled = grep {
-       (! $_->disabled) && $_
-       } CsshX::Master::Socket::Slave->slaves;
-       if (@enabled == 1) { $enabled[0]->select_next(); }
-       return $obj->set_mode_and_parse('input', $buffer);
-       }
-       */
       return nil
-    }
-  }
-}
-
-// MARK: -
-extension InputMode {
-  
-  struct Bounds: InputModeProtocol {
-    
-    var id: String { "bounds" }
-    
-    var raw: Bool { true }
-    
-    private var screen: Screen? = nil
-    
-    func prompt(_ ctrl: Controller) -> String {
-      "Move and resize master with mouse to define bounds: (Enter to accept, Esc to cancel)\r\n" +
-      "(Also Arrow keys of i,j,k,l can move window, hold Shift to resize)\r\n" +
-      "[r]eset to default, [f]ull screen, [p]rint screens configuration"
-    }
-    
-    mutating func onEnable(_ ctrl: Controller) throws {
-      // hide all host windows
-      ctrl.hosts.forEach { $0.tab.hide() }
-      
-      // switch master to resizing mode (color, …)
-      if let color = ctrl.settings.resizingTextColor {
-        ctrl.tab?.setTextColor(color: color)
-      }
-      if let color = ctrl.settings.resizingBackgroundColor {
-        ctrl.tab?.setBackgroundColor(color: color)
-      }
-      
-      // resize master to match "layout manager" bounds
-      screen = ctrl.controllerScreen
-      if let screen, !screen.frame.isEmpty {
-        ctrl.tab?.window.frame = screen.frame
-      }
-    }
-    
-    mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
-      guard let screen = screen else {
-        // TODO: exit bounds mode ?
-        return nil
-      }
-      
-      // ↑
-      if "i" ~= input || "\u{1b}[A" ~= input {
-        ctrl.move(screen: screen, dx: 0, dy: 1)
-      }
-      // shift ↑
-      else if "I" ~= input || "\u{1b}[1;2A" ~= input {
-        ctrl.resize(screen: screen, dx: 0, dy: 1)
-      }
-      
-      // ↓
-      else if "k" ~= input || "\u{1b}[B" ~= input {
-        ctrl.move(screen: screen, dx: 0, dy: -1)
-      }
-      // shift ↓
-      else if "K" ~= input || "\u{1b}[1;2B" ~= input {
-        ctrl.resize(screen: screen, dx: 0, dy: -1)
-      }
-      
-      // →
-      else if "l" ~= input || "\u{1b}[C" ~= input {
-        ctrl.move(screen: screen, dx: 1, dy: 0)
-      }
-      // shift →
-      else if "L" ~= input || "\u{1b}[1;2C" ~= input {
-        ctrl.resize(screen: screen, dx: 1, dy: 0)
-      }
-      
-      // ←
-      else if "j" ~= input || "\u{1b}[D" ~= input {
-        ctrl.move(screen: screen, dx: -1, dy: 0)
-      }
-      // shift ←
-      else if "J" ~= input || "\u{1b}[1;2D" ~= input {
-        ctrl.resize(screen: screen, dx: -1, dy: 0)
-      }
-      
-      // print screens configuration
-      else if "p" ~= input {
-        // FIXME: update to match multi-screen config once defined.
-        if let bounds = ctrl.tab?.window.frame {
-          fwrite(str: "\r\n\r\nscreen_bounds = { \(Int(bounds.origin.x)), \(Int(bounds.origin.y)), \(Int(bounds.width)), \(Int(bounds.height)) }\r\n")
-        } else {
-          beep()
-        }
-      }
-      
-      // full screen
-      else if "f" ~= input {
-        if !screen.visibleFrame.isEmpty {
-          ctrl.tab?.window.frame = screen.visibleFrame
-        }
-      }
-      
-      // apply
-      else if "\r" ~= input {
-        if let frame = ctrl.tab?.frame {
-          screen.set(frame: frame, isRelative: false)
-        }
-        ctrl.setControllerColors()
-        ctrl.layout()
-        return InputMode.Input()
-      }
-      
-      else if 0x1b ~= input {
-        // escape (\e)
-        
-        if input.dropEscapeSequence() {
-          // if is escape sequence -> delete it and beep.
-          beep()
-          return nil
-        } else {
-          // else switch to input mode
-          ctrl.setControllerColors()
-          ctrl.layout()
-          return InputMode.Input()
-        }
-      } else {
-        input.removeAll()
-        beep()
-      }
-      return nil
-    }
-  }
-}
-
-private extension Comparable {
-  func clamp(to range: Range<Self>) -> Self {
-    return Swift.max(range.lowerBound, Swift.min(range.upperBound, self))
-  }
-}
-
-private extension Controller {
-  var controllerScreen: Screen? { windowManager.controllerScreen }
-  
-  func move(screen: Screen, dx: Int, dy: Int) {
-    if var frame = tab?.window.frame {
-      let xRange = screen.visibleFrame.minX..<(screen.visibleFrame.maxX - frame.width)
-      frame.origin.x = (frame.origin.x + 10 * CGFloat(dx)).clamp(to: xRange)
-      
-      let yRange = screen.visibleFrame.minY..<(screen.visibleFrame.maxY - frame.height)
-      frame.origin.y = (frame.origin.y + 10 * CGFloat(dy)).clamp(to: yRange)
-      
-      tab?.window.origin = frame.origin
-    }
-  }
-  
-  func resize(screen: Screen, dx: Int, dy: Int) {
-    if var frame = tab?.window.frame {
-      let xRange = 40..<(screen.visibleFrame.maxX - frame.minX)
-      frame.size.width = (frame.size.width + 10 * CGFloat(dx)).clamp(to: xRange)
-      
-      let yRange = 40..<(screen.visibleFrame.maxY - frame.minY)
-      frame.size.height = (frame.size.height + 10 * CGFloat(dy)).clamp(to: yRange)
-      
-      tab?.window.frame = frame
     }
   }
 }
@@ -570,38 +409,121 @@ extension InputMode {
 
 // MARK: -
 extension InputMode {
-  
-  // TODO: multi screen support -> add an keystroke to move to the next screen (maybe tab).
-  // TODO: Add the screen ID in the prompt ?
+
+  struct AddHost: InputModeProtocol {
+
+    var id: String { "add-host" }
+
+    var raw: Bool { false }
+
+    func prompt(_ ctrl: Controller) -> String {
+      "Add Host: "
+    }
+
+    func onEnable(_ ctrl: Controller) throws {
+
+    }
+
+    func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
+      // If data contains an escape char -> discard all data
+      // This is different from original csshx which only discard data up to the escape char.
+      if input.contains(27) {
+        input.removeAll()
+        return InputMode.Input()
+      }
+      guard let hostname = String(bytes: input, encoding: .utf8) else {
+        input.removeAll()
+        beep()
+        return nil
+      }
+      // Whatever append -> discard buffer content
+      input.removeAll()
+
+      let (user, host, p) = try hostname.trimmingCharacters(in: .whitespacesAndNewlines).parseUserHostPort()
+      let target = Target(user: user, hostname: host, port: p.flatMap(UInt16.init), command: nil)
+      try ctrl.add(host: target) { error in
+        if let error {
+          logger.warning("error while starting host \(target.connectionString, privacy: .public): \(error, privacy: .public)")
+        } else {
+          ctrl.layout()
+        }
+      }
+      return InputMode.Input()
+    }
+  }
+}
+
+// MARK: - Window Layout Management
+
+// TODO: multi screen support -> add an keystroke to move to the next screen (maybe tab).
+// TODO: Add the screen ID in the prompt ?
+
+private extension Comparable {
+  func clamp(to range: Range<Self>) -> Self {
+    return Swift.max(range.lowerBound, Swift.min(range.upperBound, self))
+  }
+}
+
+private extension Controller {
+  var controllerScreen: Screen? { windowManager.controllerScreen }
+
+  func move(screen: Screen, dx: Int, dy: Int) {
+    if var frame = tab?.window.frame {
+      let xRange = screen.visibleFrame.minX..<(screen.visibleFrame.maxX - frame.width)
+      frame.origin.x = (frame.origin.x + 10 * CGFloat(dx)).clamp(to: xRange)
+
+      let yRange = screen.visibleFrame.minY..<(screen.visibleFrame.maxY - frame.height)
+      frame.origin.y = (frame.origin.y + 10 * CGFloat(dy)).clamp(to: yRange)
+
+      tab?.window.origin = frame.origin
+    }
+  }
+
+  func resize(screen: Screen, dx: Int, dy: Int) {
+    if var frame = tab?.window.frame {
+      let xRange = 40..<(screen.visibleFrame.maxX - frame.minX)
+      frame.size.width = (frame.size.width + 10 * CGFloat(dx)).clamp(to: xRange)
+
+      let yRange = 40..<(screen.visibleFrame.maxY - frame.minY)
+      frame.size.height = (frame.size.height + 10 * CGFloat(dy)).clamp(to: yRange)
+
+      tab?.window.frame = frame
+    }
+  }
+}
+
+// MARK: -
+extension InputMode {
+
   struct Enable: InputModeProtocol {
-    
+
     var id: String { "enable" }
-    
+
     var raw: Bool { true }
-    
+
     private var screen: Screen? = nil
-    
+
     var selection: HostWindow? = nil {
       didSet {
         oldValue?.selected = false
         selection?.selected = true
       }
     }
-    
+
     func prompt(_ ctrl: Controller) -> String {
       "Select window with Arrow keys or i,j,k,l: (Esc to exit)\r\n" +
       "[e]nable input, [d]isable input, disable [o]thers, disable [O]thers and zoom, [t]oggle input\r\n"
     }
-    
+
     mutating func onEnable(_ ctrl: Controller) throws {
       ctrl.hosts.forEach { $0.tab.window.zoomed = false }
       // select first host window
       selection = ctrl.hosts.first
-      
+
       // default to controller screen
       screen = ctrl.controllerScreen
     }
-    
+
     mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
       // ↑
       if "i" ~= input || "\u{1b}[A" ~= input {
@@ -639,21 +561,21 @@ extension InputMode {
           selection = next
         }
       }
-      
+
       else if "e" ~= input {
         selection?.enabled = true
       }
-      
+
       else if "d" ~= input {
         selection?.enabled = false
       }
-      
+
       else if "t" ~= input {
         if let selected = selection {
           selected.enabled = !selected.enabled
         }
       }
-      
+
       // disable others
       else if "o" ~= input {
         if let selected = selection {
@@ -667,7 +589,7 @@ extension InputMode {
           return InputMode.Input()
         }
       }
-      
+
       // disable others and zoom
       else if "O" ~= input {
         if let selected = selection {
@@ -689,11 +611,11 @@ extension InputMode {
           return InputMode.Input()
         }
       }
-      
-      
+
+
       else if 0x1b ~= input || 0x0d ~= input {
         // escape (\e)
-        
+
         // Should always returns false for 0x0d
         if input.dropEscapeSequence() {
           // if is escape sequence -> delete it and beep.
@@ -708,7 +630,7 @@ extension InputMode {
         input.removeAll()
         beep()
       }
-      
+
       return nil
     }
   }
@@ -716,50 +638,132 @@ extension InputMode {
 
 // MARK: -
 extension InputMode {
-  
-  struct AddHost: InputModeProtocol {
-    
-    var id: String { "add-host" }
-    
-    var raw: Bool { false }
-    
+
+  struct Bounds: InputModeProtocol {
+
+    var id: String { "bounds" }
+
+    var raw: Bool { true }
+
+    private var screen: Screen? = nil
+
     func prompt(_ ctrl: Controller) -> String {
-      "Add Host: "
+      "Move and resize master with mouse to define bounds: (Enter to accept, Esc to cancel)\r\n" +
+      "(Also Arrow keys of i,j,k,l can move window, hold Shift to resize)\r\n" +
+      "[r]eset to default, [f]ull screen, [p]rint screens configuration"
     }
-    
-    func onEnable(_ ctrl: Controller) throws {
-      
-    }
-    
-    func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
-      // If data contains an escape char -> discard all data
-      // This is different from original csshx which only discard data up to the escape char.
-      if input.contains(27) {
-        input.removeAll()
-        return InputMode.Input()
+
+    mutating func onEnable(_ ctrl: Controller) throws {
+      // hide all host windows
+      ctrl.hosts.forEach { $0.tab.hide() }
+
+      // switch master to resizing mode (color, …)
+      if let color = ctrl.settings.resizingTextColor {
+        ctrl.tab?.setTextColor(color: color)
       }
-      guard let hostname = String(bytes: input, encoding: .utf8) else {
-        input.removeAll()
-        beep()
+      if let color = ctrl.settings.resizingBackgroundColor {
+        ctrl.tab?.setBackgroundColor(color: color)
+      }
+
+      // resize master to match "layout manager" bounds
+      screen = ctrl.controllerScreen
+      if let screen, !screen.frame.isEmpty {
+        ctrl.tab?.window.frame = screen.frame
+      }
+    }
+
+    mutating func parse(input: inout [UInt8], _ ctrl: Controller) throws -> (any InputModeProtocol)? {
+      guard let screen = screen else {
+        // TODO: exit bounds mode ?
         return nil
       }
-      // Whatever append -> discard buffer content
-      input.removeAll()
-      
-      let (user, host, p) = try hostname.trimmingCharacters(in: .whitespacesAndNewlines).parseUserHostPort()
-      let target = Target(user: user, hostname: host, port: p.flatMap(UInt16.init), command: nil)
-      try ctrl.add(host: target) { error in
-        if let error {
-          logger.warning("error while starting host \(target.connectionString, privacy: .public): \(error, privacy: .public)")
+
+      // ↑
+      if "i" ~= input || "\u{1b}[A" ~= input {
+        ctrl.move(screen: screen, dx: 0, dy: 1)
+      }
+      // shift ↑
+      else if "I" ~= input || "\u{1b}[1;2A" ~= input {
+        ctrl.resize(screen: screen, dx: 0, dy: 1)
+      }
+
+      // ↓
+      else if "k" ~= input || "\u{1b}[B" ~= input {
+        ctrl.move(screen: screen, dx: 0, dy: -1)
+      }
+      // shift ↓
+      else if "K" ~= input || "\u{1b}[1;2B" ~= input {
+        ctrl.resize(screen: screen, dx: 0, dy: -1)
+      }
+
+      // →
+      else if "l" ~= input || "\u{1b}[C" ~= input {
+        ctrl.move(screen: screen, dx: 1, dy: 0)
+      }
+      // shift →
+      else if "L" ~= input || "\u{1b}[1;2C" ~= input {
+        ctrl.resize(screen: screen, dx: 1, dy: 0)
+      }
+
+      // ←
+      else if "j" ~= input || "\u{1b}[D" ~= input {
+        ctrl.move(screen: screen, dx: -1, dy: 0)
+      }
+      // shift ←
+      else if "J" ~= input || "\u{1b}[1;2D" ~= input {
+        ctrl.resize(screen: screen, dx: -1, dy: 0)
+      }
+
+      // print screens configuration
+      else if "p" ~= input {
+        // FIXME: update to match multi-screen config once defined.
+        if let bounds = ctrl.tab?.window.frame {
+          fwrite(str: "\r\n\r\nscreen_bounds = { \(Int(bounds.origin.x)), \(Int(bounds.origin.y)), \(Int(bounds.width)), \(Int(bounds.height)) }\r\n", file: stdout)
         } else {
-          ctrl.layout()
+          beep()
         }
       }
-      return InputMode.Input()
+
+      // full screen
+      else if "f" ~= input {
+        if !screen.visibleFrame.isEmpty {
+          ctrl.tab?.window.frame = screen.visibleFrame
+        }
+      }
+
+      // apply
+      else if "\r" ~= input {
+        if let frame = ctrl.tab?.frame {
+          screen.set(frame: frame, isRelative: false)
+        }
+        ctrl.setControllerColors()
+        ctrl.layout()
+        return InputMode.Input()
+      }
+
+      else if 0x1b ~= input {
+        // escape (\e)
+
+        if input.dropEscapeSequence() {
+          // if is escape sequence -> delete it and beep.
+          beep()
+          return nil
+        } else {
+          // else switch to input mode
+          ctrl.setControllerColors()
+          ctrl.layout()
+          return InputMode.Input()
+        }
+      } else {
+        input.removeAll()
+        beep()
+      }
+      return nil
     }
   }
 }
 
+// MARK: -
 // grid mode:
 // use arrows to increase/decrease count of rows/columns of the current screen.
 // TODO: multiscreen support
