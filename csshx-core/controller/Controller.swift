@@ -285,10 +285,25 @@ extension Controller {
     if settings.dummy {
       args.append("--dummy")
     }
-    // TODO: ssh args and remote command
+
+    // passing ssh args and remote command as raw arguments, and let the Terminal shell parse them
+    var script = Shell.quote(args: args)
+    if settings.sshArgs != nil || settings.remoteCommand != nil {
+      script.append(" --extra-args")
+
+      if let sshArgs = settings.sshArgs {
+        script.append(" ")
+        script.append(sshArgs)
+      }
+
+      if let remoteCommand = settings.remoteCommand {
+        script.append(" -- ")
+        script.append(remoteCommand)
+      }
+    }
     
     do {
-      try tab.run(args: args, clear: true, exec: !settings.debug)
+      try tab.run(args: script, clear: true, exec: !settings.debug)
     } catch {
       // Something went wrong while starting -> abort now
       terminate(host: host)

@@ -12,27 +12,6 @@ struct ScriptingBridgeError: Error {
   
 }
 
-private let _unsafe = Regex {
-  CharacterClass(
-    .anyOf("@%+=:,./-"),
-    .word
-  )
-  .inverted
-}
-
-/// Return a shell-escaped version of the string
-private func quote(arg: String) -> String {
-  guard !arg.isEmpty else { return "''" }
-  
-  if arg.firstMatch(of: _unsafe) == nil {
-    return arg
-  }
-  
-  // use single quotes, and put single quotes into double quotes
-  // the string $'b is then quoted as '$'"'"'b'
-  return "'" + arg.replacing("'", with: #"'"'"'"#) + "'"
-}
-
 extension Terminal {
   
   // MARK: Color
@@ -66,8 +45,13 @@ extension Terminal {
     }
     
     func run(args: [String], clear: Bool, exec: Bool) throws {
+      try run(args: Shell.quote(args: args), clear: clear, exec: exec)
+    }
+    
+    /// 'args' is passed to the shell, so it should be escaped
+    func run(args: String, clear: Bool, exec: Bool) throws {
       let shell = Terminal.shell
-      
+
       // Hide the command from any shell history
       var script = ""
       switch (shell) {
@@ -79,16 +63,16 @@ extension Terminal {
           script.append(" ")
           break
       }
-      
+
       if clear { script.append("clear && ") }
       if exec { script.append("exec ") }
-      
-      script += args.map(quote(arg:)).joined(separator: " ")
+
+      script += args
       guard terminal.doScript(script, in: tab) == tab else {
         throw ScriptingBridgeError()
       }
     }
-    
+
     var tty: dev_t {
       return tab.ttydev()
     }

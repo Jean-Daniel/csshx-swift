@@ -20,21 +20,40 @@ public struct HostCommand: ParsableCommand {
     @Option var login: String? = nil
     @Option var port: UInt16? = nil
     
-    @Option(parsing: .unconditionalSingleValue) var sshArgs: [String] = []
-    
-    @Argument(parsing:.postTerminator) var remoteCommand: [String] = []
+    // using opstTerminator and remaining is not supported, as postTerminator is
+    // parsed after remaining, all always returns an empty array. Instead, try to detect terminator ourself
+    // in the remaining arguments list.
+    @Option(parsing: .remaining) var extraArgs: [String] = []
+    // @Argument(parsing: .postTerminator) var remoteCommand: [String] = []
+
+    var sshArgs: [String] = []
+    var remoteCommand: [String] = []
   }
-  
+
   @OptionGroup var options: Options
   @Flag(help: .private) var dummy: Bool = false
   
   public init() {}
   
   public func run() throws {
+    var options = options
+    if (!options.extraArgs.isEmpty) {
+      if let terminator = options.extraArgs.firstIndex(of: "--") {
+        if terminator > 0 {
+          options.sshArgs.append(contentsOf: options.extraArgs[0..<terminator])
+        }
+        if terminator + 1 < options.extraArgs.count {
+          options.remoteCommand.append(contentsOf: options.extraArgs[terminator + 1..<options.extraArgs.endIndex])
+        }
+      } else {
+        options.sshArgs.append(contentsOf: options.extraArgs)
+      }
+    }
+
     // First, connect to the socket (no need to try to launch ssh if connection fails)
     logger.debug("trying to connect socket at path: \(options.socket)")
     let client = try SSHWrapper(socket: options.socket)
-    
+
     // Then starts SSH
     if !dummy {
       // controller had time to retreive the pid/tty and match it to the requested host.
@@ -160,7 +179,7 @@ private class SSHWrapper {
     args.append(options.hostname)
     
     args.append(contentsOf: options.remoteCommand)
-    
+
     // Note: Do not use Process for 2 reasons:
     // - Process does many things under the hood, and end-up freezing the process in a call to tcsetattr().
     // - Process does not support looking for the target process in the PATH, which is something we want to be

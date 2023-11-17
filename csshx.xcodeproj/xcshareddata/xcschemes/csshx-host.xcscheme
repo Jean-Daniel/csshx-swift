@@ -60,7 +60,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ssh-args  -c -p 2023 -O -f &quot;youpi kai&quot; -- echo &quot;Hello World&quot;"
+            argument = "--extra-args -d -- echo Hello World"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

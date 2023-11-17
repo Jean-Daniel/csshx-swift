@@ -49,6 +49,35 @@ func fwrite(str: String, file: UnsafeMutablePointer<FILE>) {
   }
 }
 
+struct Shell {
+
+  private static let _unsafe = Regex {
+    CharacterClass(
+      .anyOf("@%+=:,./-"),
+      .word
+    )
+    .inverted
+  }
+
+  /// Return a shell-escaped version of the string
+  static func quote(arg: String) -> String {
+    guard !arg.isEmpty else { return "''" }
+
+    if arg.firstMatch(of: _unsafe) == nil {
+      return arg
+    }
+
+    // use single quotes, and put single quotes into double quotes
+    // the string $'b is then quoted as '$'"'"'b'
+    return "'" + arg.replacing("'", with: #"'"'"'"#) + "'"
+  }
+
+  static func quote(args: [String]) -> String {
+    return args.map(quote(arg:)).joined(separator: " ")    
+  }
+
+}
+
 struct stty {
   
   static func clear() { fwrite(str: "\u{001b}[1J\u{001b}[0;0H", file: stdout) }
