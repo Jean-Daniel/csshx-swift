@@ -30,6 +30,7 @@ struct Target: Equatable {
   }
 }
 
+/// HostList is use to convert clusters/hosts parameters into an actual host list.
 struct HostList {
   
   private struct HostSpec {

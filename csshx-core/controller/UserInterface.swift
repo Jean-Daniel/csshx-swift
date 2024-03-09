@@ -9,53 +9,6 @@ import Foundation
 import RegexBuilder
 import System
 
-// Special match operator that consume
-private func ~= (pattern: String, value: inout [UInt8]) -> Bool {
-  guard !value.isEmpty, !pattern.isEmpty else { return false }
-  
-  if pattern.utf8.count == 1 {
-    // Fast path
-    if value[0] == pattern.utf8.first {
-      value.removeFirst()
-      return true
-    }
-    return false
-  }
-  
-  if value.prefix(pattern.utf8.count).elementsEqual(pattern.utf8) {
-    value.removeFirst(pattern.utf8.count)
-    return true
-  }
-  return false
-}
-
-private func ~= (pattern: UInt8, value: inout [UInt8]) -> Bool {
-  guard !value.isEmpty else { return false }
-  
-  if pattern == value[0] {
-    value.removeFirst()
-    return true
-  }
-  return false
-}
-
-extension Array<UInt8> {
-  // TODO: other escape sequences
-  mutating func dropEscapeSequence() -> Bool {
-    guard !isEmpty else { return false }
-    
-    if self[0] == 0x5B {
-      // CSI escape sequence.
-      removeFirst()
-      
-      // Not sure about how to process it accurately. Dropping everything in range of supported CSI chars.
-      trimPrefix { (0x20...0x7E).contains($0) }
-      return true
-    }
-    return false
-  }
-}
-
 protocol InputModeProtocol: Equatable, Identifiable<String> {
   var raw: Bool { get }
   
@@ -162,7 +115,7 @@ extension InputMode {
       
       return "Actions (Esc to exit, \(escape) to send \(escape) to input)\r\n" +
       "[c]reate window, [r]etile, s[o]rt, [e]nable/disable input, e[n]able all, " +
-      // If there is a single host enable, add the 'select next' option.
+      // If there is a single host enabled, add the 'select next' option.
       (ctrl.hosts.count > 1 && ctrl.hosts.count(where: { $0.enabled }) == 1 ? "[Space] Enable next " : "") +
       "[t]oggle enabled, [m]inimise, [h]ide, [s]end text, change [b]ounds, " +
       "change [g]rid, e[x]it\r\n";
@@ -466,29 +419,33 @@ private extension Comparable {
 
 private extension Controller {
   var controllerScreen: Screen? { windowManager.controllerScreen }
+}
 
+private extension Terminal.Tab {
   func move(screen: Screen, dx: Int, dy: Int) {
-    if var frame = tab?.window.frame {
-      let xRange = screen.visibleFrame.minX..<(screen.visibleFrame.maxX - frame.width)
-      frame.origin.x = (frame.origin.x + 10 * CGFloat(dx)).clamp(to: xRange)
+    var frame = window.frame
+    guard !frame.isEmpty else { return }
 
-      let yRange = screen.visibleFrame.minY..<(screen.visibleFrame.maxY - frame.height)
-      frame.origin.y = (frame.origin.y + 10 * CGFloat(dy)).clamp(to: yRange)
+    let xRange = screen.visibleFrame.minX..<(screen.visibleFrame.maxX - frame.width)
+    frame.origin.x = (frame.origin.x + 10 * CGFloat(dx)).clamp(to: xRange)
 
-      tab?.window.origin = frame.origin
-    }
+    let yRange = screen.visibleFrame.minY..<(screen.visibleFrame.maxY - frame.height)
+    frame.origin.y = (frame.origin.y + 10 * CGFloat(dy)).clamp(to: yRange)
+
+    window.origin = frame.origin
   }
 
   func resize(screen: Screen, dx: Int, dy: Int) {
-    if var frame = tab?.window.frame {
-      let xRange = 40..<(screen.visibleFrame.maxX - frame.minX)
-      frame.size.width = (frame.size.width + 10 * CGFloat(dx)).clamp(to: xRange)
+    var frame = window.frame
+    guard !frame.isEmpty else { return }
 
-      let yRange = 40..<(screen.visibleFrame.maxY - frame.minY)
-      frame.size.height = (frame.size.height + 10 * CGFloat(dy)).clamp(to: yRange)
+    let xRange = 40..<(screen.visibleFrame.maxX - frame.minX)
+    frame.size.width = (frame.size.width + 10 * CGFloat(dx)).clamp(to: xRange)
 
-      tab?.window.frame = frame
-    }
+    let yRange = 40..<(screen.visibleFrame.maxY - frame.minY)
+    frame.size.height = (frame.size.height + 10 * CGFloat(dy)).clamp(to: yRange)
+
+    window.frame = frame
   }
 }
 
@@ -680,38 +637,38 @@ extension InputMode {
 
       // ↑
       if "i" ~= input || "\u{1b}[A" ~= input {
-        ctrl.move(screen: screen, dx: 0, dy: 1)
+        ctrl.tab?.move(screen: screen, dx: 0, dy: 1)
       }
       // shift ↑
       else if "I" ~= input || "\u{1b}[1;2A" ~= input {
-        ctrl.resize(screen: screen, dx: 0, dy: 1)
+        ctrl.tab?.resize(screen: screen, dx: 0, dy: 1)
       }
 
       // ↓
       else if "k" ~= input || "\u{1b}[B" ~= input {
-        ctrl.move(screen: screen, dx: 0, dy: -1)
+        ctrl.tab?.move(screen: screen, dx: 0, dy: -1)
       }
       // shift ↓
       else if "K" ~= input || "\u{1b}[1;2B" ~= input {
-        ctrl.resize(screen: screen, dx: 0, dy: -1)
+        ctrl.tab?.resize(screen: screen, dx: 0, dy: -1)
       }
 
       // →
       else if "l" ~= input || "\u{1b}[C" ~= input {
-        ctrl.move(screen: screen, dx: 1, dy: 0)
+        ctrl.tab?.move(screen: screen, dx: 1, dy: 0)
       }
       // shift →
       else if "L" ~= input || "\u{1b}[1;2C" ~= input {
-        ctrl.resize(screen: screen, dx: 1, dy: 0)
+        ctrl.tab?.resize(screen: screen, dx: 1, dy: 0)
       }
 
       // ←
       else if "j" ~= input || "\u{1b}[D" ~= input {
-        ctrl.move(screen: screen, dx: -1, dy: 0)
+        ctrl.tab?.move(screen: screen, dx: -1, dy: 0)
       }
       // shift ←
       else if "J" ~= input || "\u{1b}[1;2D" ~= input {
-        ctrl.resize(screen: screen, dx: -1, dy: 0)
+        ctrl.tab?.resize(screen: screen, dx: -1, dy: 0)
       }
 
       // print screens configuration
@@ -766,9 +723,7 @@ extension InputMode {
 // MARK: -
 // grid mode:
 // use arrows to increase/decrease count of rows/columns of the current screen.
-// TODO: multiscreen support
-// allows setting the rows/columns count to 0 if there is multiple screens -> disable/enable the screen accordingly.
-// use tab to circle over all screens.
+// TODO: allows setting the rows/columns count to 0 if there is multiple screens -> disable/enable the screen accordingly.
 extension InputMode {
   
   struct Grid: InputModeProtocol {
@@ -851,5 +806,53 @@ extension InputMode {
       
       return nil
     }
+  }
+}
+
+// MARK: - Utilities
+// Special match operator that consume
+private func ~= (pattern: String, value: inout [UInt8]) -> Bool {
+  guard !value.isEmpty, !pattern.isEmpty else { return false }
+
+  if pattern.utf8.count == 1 {
+    // Fast path
+    if value[0] == pattern.utf8.first {
+      value.removeFirst()
+      return true
+    }
+    return false
+  }
+
+  if value.prefix(pattern.utf8.count).elementsEqual(pattern.utf8) {
+    value.removeFirst(pattern.utf8.count)
+    return true
+  }
+  return false
+}
+
+private func ~= (pattern: UInt8, value: inout [UInt8]) -> Bool {
+  guard !value.isEmpty else { return false }
+
+  if pattern == value[0] {
+    value.removeFirst()
+    return true
+  }
+  return false
+}
+
+extension Array<UInt8> {
+  // TODO: other escape sequences
+  mutating func dropEscapeSequence() -> Bool {
+    guard !isEmpty else { return false }
+
+    if self[0] == 0x5B {
+      // CSI escape sequence.
+      removeFirst()
+
+      // Not sure about how to process it accurately. Dropping everything in range of supported CSI chars.
+      trimPrefix { (0x20...0x7E).contains($0) }
+      return true
+    }
+    return false
   }
 }

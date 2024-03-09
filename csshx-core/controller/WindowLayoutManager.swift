@@ -76,7 +76,7 @@ class WindowLayoutManager {
   }
 
   private func reloadScreens() {
-
+    logger.warning("screen reloading not implemented yet")
   }
 
   private func didReconfigure(display: CGDirectDisplayID, flags: CGDisplayChangeSummaryFlags) {
