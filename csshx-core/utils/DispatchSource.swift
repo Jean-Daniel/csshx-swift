@@ -11,9 +11,10 @@ import Dispatch
 private func waitFor<Source: DispatchSourceProtocol>(source: Source,
                                                      event: String,
                                                      timeout: DispatchTimeInterval,
+                                                     queue: DispatchQueue,
                                                      handler: @escaping (Bool) -> Void) {
   // Add Task Cancellation handler to cancel the source when the Task is cancelled.
-  let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
+  let timer = DispatchSource.makeTimerSource(queue: queue)
   timer.schedule(deadline: DispatchTime.now() + timeout)
   
   timer.setEventHandler {
@@ -36,14 +37,14 @@ private func waitFor<Source: DispatchSourceProtocol>(source: Source,
   timer.activate()
 }
 
-func waitFor(signal: Int32, timeout: DispatchTimeInterval, handler: @escaping (Bool) -> Void) {
-  let source = DispatchSource.makeSignalSource(signal: signal)
-  waitFor(source: source, event: "signal \(signal)", timeout: timeout, handler: handler)
+func waitFor(signal: Int32, timeout: DispatchTimeInterval, queue: DispatchQueue, handler: @escaping (Bool) -> Void) {
+  let source = DispatchSource.makeSignalSource(signal: signal, queue: queue)
+  waitFor(source: source, event: "signal \(signal)", timeout: timeout, queue: queue, handler: handler)
 }
 
-func waitFor(pid: pid_t, handler: @escaping (Int) -> Void) {
-  let source = DispatchSource.makeProcessSource(identifier: pid, eventMask: .exit)
-  waitFor(source: source, event: "process \(pid) exit", timeout: .never) { timeout in
+func waitFor(pid: pid_t, queue: DispatchQueue, handler: @escaping (Int) -> Void) {
+  let source = DispatchSource.makeProcessSource(identifier: pid, eventMask: .exit, queue: queue)
+  waitFor(source: source, event: "process \(pid) exit", timeout: .never, queue: queue) { timeout in
     var s: Int32 = 0
     if waitpid(pid, &s, WNOHANG) > 0 {
       handler(Int(s))

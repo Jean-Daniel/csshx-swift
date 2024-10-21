@@ -223,8 +223,8 @@
 		1B6FBCF22B002ADF00677D27 /* commands */ = {
 			isa = PBXGroup;
 			children = (
-				1B6FBCF32B002ADF00677D27 /* ControllerCommand.swift */,
 				1B6FBCF42B002ADF00677D27 /* Arguments.swift */,
+				1B6FBCF32B002ADF00677D27 /* ControllerCommand.swift */,
 				1B6FBCF52B002ADF00677D27 /* HostCommand.swift */,
 				1B6FBCF62B002ADF00677D27 /* Launcher.swift */,
 			);
@@ -301,7 +301,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					1B1E7FCF2ACCA2D1009BA975 = {
 						CreatedOnToolsVersion = 15.0;
@@ -365,6 +365,7 @@
 				1B6FBD172B002B1200677D27 /* Bridge.m in Sources */,
 				1B6FBCF92B002ADF00677D27 /* Terminal.swift in Sources */,
 				1B6FBD162B002B1200677D27 /* Terminal.m in Sources */,
+				1B4891272B08C18D00C8C8BC /* SimplePing.m in Sources */,
 				1B6FBD032B002ADF00677D27 /* UserInterface.swift in Sources */,
 				1B6FBD082B002ADF00677D27 /* Launcher.swift in Sources */,
 				1B6FBD072B002ADF00677D27 /* HostCommand.swift in Sources */,
@@ -397,7 +398,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -447,13 +447,13 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
-				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -461,7 +461,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -505,11 +504,11 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
-				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -532,8 +531,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.xenonium.csshx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "csshx-bridge/include/CsshxBridge.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -556,7 +553,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.xenonium.csshx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "csshx-bridge/include/CsshxBridge.h";
-				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};

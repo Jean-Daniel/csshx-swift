@@ -83,7 +83,7 @@ class WindowLayoutManager {
     // FIXME: only handle desktop shape change events ?
     if (!dirty) {
       dirty = true
-      DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
+      DispatchQueue.main.asyncAfterUnsafe(deadline: .now() + .milliseconds(500)) {
         // refresh using NSScreen API.
         self.reloadScreens()
         self.dirty = false

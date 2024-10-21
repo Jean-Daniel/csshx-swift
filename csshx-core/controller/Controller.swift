@@ -314,7 +314,7 @@ extension Controller {
     
     // Simple timeout scheme. Instead of scheduling a DispatchSourceTimer, and having to manage it
     // unconditonally schedule a block after delay, and test if the op is done when this block is executed.
-    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5)) { [weak self] in
+    DispatchQueue.main.asyncAfterUnsafe(deadline: .now() + .seconds(5)) { [weak self] in
       // if operation not done yet -> cancel it.
       if let self, let done = host.whenDone {
         terminate(host: host)

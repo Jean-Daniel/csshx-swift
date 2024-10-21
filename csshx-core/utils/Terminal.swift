@@ -12,13 +12,10 @@ let TerminalBundleId = "com.apple.Terminal"
 
 struct Terminal {
   
-  private static var _shell: String? = nil
-  
-  static var shell: String {
-    if let shell = _shell {
-      return shell
-    }
-    
+  static let shell: String = getShell()
+
+  private static func getShell() -> String {
+    var userShell: String? = nil
     let defaults = UserDefaults(suiteName: TerminalBundleId)
     
     // Lookup for the window settings
@@ -27,26 +24,26 @@ struct Terminal {
        let runAsShell = settings["RunCommandAsShell"] as? Bool, runAsShell,
        let shell = settings["CommandString"] as? String {
       // remove leading '-' included by default by Terminal
-      _shell = FilePath(shell).lastComponent?.string.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+      userShell = FilePath(shell).lastComponent?.string.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
     
     // Then for the global terminal settings
-    if (_shell?.isEmpty != false), let shell = defaults?.string(forKey: "Shell") {
-      _shell = FilePath(shell).lastComponent?.string
+    if (userShell?.isEmpty != false), let shell = defaults?.string(forKey: "Shell") {
+      userShell = FilePath(shell).lastComponent?.string
     }
     
     // Then in passwd.
-    if (_shell?.isEmpty != false) {
+    if (userShell?.isEmpty != false) {
       if let passwd = getpwuid(getuid()) {
-        _shell = FilePath(platformString: passwd.pointee.pw_shell).lastComponent?.string
+        userShell = FilePath(platformString: passwd.pointee.pw_shell).lastComponent?.string
       }
     }
     
     // And fallback to default shell
-    if (_shell?.isEmpty != false) {
-      _shell = "zsh"
+    if (userShell?.isEmpty != false) {
+      userShell = "zsh"
     }
-    return _shell!
+    return userShell!
   }
   
 }

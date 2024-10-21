@@ -8,9 +8,9 @@
 import ArgumentParser
 import Foundation
 
-public struct Launcher: ParsableCommand {
-  
-  public static var configuration = CommandConfiguration(
+public struct Launcher: ParsableCommand, Sendable {
+
+  public static let configuration = CommandConfiguration(
     commandName: "csshx",
     abstract: "csshX - Cluster SSH tool using Mac OS X Terminal.app",
     discussion: """
@@ -70,7 +70,7 @@ public struct Launcher: ParsableCommand {
     // Note: DispatchSourceSignal is based on kevent, and is independent of signal()/sigaction().
     // The SIGUSR1 must be disabled in 'signal' to avoid process death when receiving it.
     Darwin.signal(SIGUSR1, SIG_IGN)
-    waitFor(signal: SIGUSR1, timeout: .seconds(10)) { timeout in
+    waitFor(signal: SIGUSR1, timeout: .seconds(10), queue: DispatchQueue.main) { timeout in
       if (timeout) {
         logger.debug("master starting timeout")
         print("No master")

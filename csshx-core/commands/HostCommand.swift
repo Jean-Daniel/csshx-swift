@@ -10,9 +10,9 @@ import ArgumentParser
 
 // Host does not try to read or parse settings file.
 // All values must be passed though launching options.
-public struct HostCommand: ParsableCommand {
+public struct HostCommand: ParsableCommand, Sendable {
   
-  struct Options: ParsableArguments {
+  struct Options: ParsableArguments, Sendable {
     @Option var ssh: String
     @Option var socket: String
     @Option var hostname: String
@@ -63,7 +63,7 @@ public struct HostCommand: ParsableCommand {
     }
     
     // Simple timeout
-    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5)) {
+    DispatchQueue.main.asyncAfterUnsafe(deadline: .now() + .seconds(5)) {
       // If handshake still not done -> close the connection.
       if !client.isReady {
         logger.warning("client handshake timeout")
@@ -115,7 +115,7 @@ public struct HostCommand: ParsableCommand {
     
     if !dummy {
       // If ssh exit, terminating
-      waitFor(pid: client.pid) { result in
+      waitFor(pid: client.pid, queue: DispatchQueue.main) { result in
         if result != 0 {
           logger.info("ssh exit with status \(result)")
         } else {

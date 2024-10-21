@@ -51,6 +51,7 @@ func fwrite(str: String, file: UnsafeMutablePointer<FILE>) {
 
 struct Shell {
 
+  nonisolated(unsafe)
   private static let _unsafe = Regex {
     CharacterClass(
       .anyOf("@%+=:,./-"),

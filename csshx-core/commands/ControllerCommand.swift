@@ -9,7 +9,7 @@ import Cocoa
 import ArgumentParser
 
 // import Bridge
-public struct ControllerCommand: ParsableCommand {
+public struct ControllerCommand: ParsableCommand, Sendable {
 
   @Option var windowId: CGWindowID?
   @Option var tabIdx: Int = 1
@@ -111,7 +111,10 @@ public struct ControllerCommand: ParsableCommand {
       }
     }
 
-    // required to get display change notifications
-    NSApplication.shared.run()
+    // NSApplication is required to get display change notifications
+    MainActor.assumeIsolated {
+      let _ = NSApplication.shared
+      CFRunLoopRun()
+    }
   }
 }

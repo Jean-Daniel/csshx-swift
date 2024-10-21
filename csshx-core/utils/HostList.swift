@@ -66,7 +66,8 @@ struct HostList {
     }
     return resolved
   }
-  
+
+  nonisolated(unsafe)
   private static let repeatPattern = Regex {
     Capture(OneOrMore(.any, .reluctant))
     "+"
@@ -175,7 +176,7 @@ struct HostList {
   
   private func _expand(ip: String, limit: Int) -> [String]? {
     var addr = in_addr()
-    let bits = inet_net_pton(AF_INET, ip, &addr, UInt(MemoryLayout.size(ofValue: addr)))
+    let bits = inet_net_pton(AF_INET, ip, &addr, MemoryLayout.size(ofValue: addr))
     guard bits > 0 else {
       return nil
     }
@@ -227,13 +228,15 @@ struct HostList {
     }
     return result
   }
-  
+
+  nonisolated(unsafe)
   private static let intRange = Regex {
     Capture(OneOrMore(.digit)) { Int($0)! }
     "-"
     Capture(OneOrMore(.digit)) { Int($0)! }
   }
-  
+
+  nonisolated(unsafe)
   private static let alphaRange = Regex {
     ChoiceOf {
       Regex {
@@ -312,9 +315,11 @@ struct HostList {
       clusters[cluster] = hosts
     }
   }
-  
+
+  nonisolated(unsafe)
   private static let commentExpr = /#.*$/
-  
+
+  nonisolated(unsafe)
   private static let hostFileLine = Regex {
     Capture {
       OneOrMore(.whitespace.inverted)
@@ -357,6 +362,7 @@ struct HostList {
   }
 }
 
+nonisolated(unsafe)
 private let hostFormat = Regex {
   Optionally {
     Regex {

@@ -54,7 +54,8 @@ extension Array<Int>: ExpressibleByStringArgument {
     }
     return result
   }
-  
+
+  nonisolated(unsafe)
   private static let intRange = Regex {
     Capture(OneOrMore(.digit)) { Int($0)! }
     "-"
@@ -87,7 +88,7 @@ extension Array<Int>: ExpressibleByStringArgument {
 
 
 // MARK: CGRect
-
+nonisolated(unsafe)
 private let boundsValueRegex = Regex {
   ZeroOrMore(.whitespace)
   Capture {
@@ -96,6 +97,7 @@ private let boundsValueRegex = Regex {
   ZeroOrMore(.whitespace)
 }
 
+nonisolated(unsafe)
 private let boundsRegex = Regex {
   Anchor.startOfLine
   ZeroOrMore(.whitespace)
@@ -126,20 +128,20 @@ enum SettingsError: Error {
   case invalidValue
 }
 
-struct Op {
-  
-  private let op: (inout Settings, String) throws -> Void
-  
+struct Op: Sendable {
+
+  private let op: @Sendable (inout Settings, String) throws -> Void
+
   @inlinable
   func callAsFunction(settings: inout Settings, value: String) throws {
     try op(&settings, value)
   }
   
-  static func set<Ty>(_ keypath: WritableKeyPath<Settings, Ty>) -> Op where Ty: ExpressibleByStringArgument {
+  static func set<Ty>(_ keypath: WritableKeyPath<Settings, Ty> & Sendable) -> Op where Ty: ExpressibleByStringArgument, Ty: Sendable {
     return Op { $0[keyPath: keypath] = try parse($1) }
   }
   
-  static func set<Ty>(_ keypath: WritableKeyPath<Settings, Ty?>) -> Op where Ty: ExpressibleByStringArgument {
+  static func set<Ty>(_ keypath: WritableKeyPath<Settings, Ty?> & Sendable) -> Op where Ty: ExpressibleByStringArgument, Ty: Sendable {
     return Op { $0[keyPath: keypath] = try parse($1) }
   }
   
@@ -158,12 +160,14 @@ private func parse<Ty>(_ value: String) throws -> Ty where Ty: ExpressibleByStri
 }
 
 // {65535,3243,16534}
+nonisolated(unsafe)
 private let intValueRegex = Regex {
   Capture {
     OneOrMore(.digit)
   } transform: { UInt16($0) }
 }
 
+nonisolated(unsafe)
 private let rgbColorRegex = Regex {
   Anchor.startOfLine
   "{"
@@ -177,6 +181,7 @@ private let rgbColorRegex = Regex {
 }
 
 // (#)0a413b
+nonisolated(unsafe)
 private let hexInt = Regex {
   Capture {
     One(.hexDigit)
@@ -184,6 +189,7 @@ private let hexInt = Regex {
   } transform: { UInt16($0, radix: 16) }
 }
 
+nonisolated(unsafe)
 private let hexColorRegex = Regex {
   Anchor.startOfLine
   Optionally("#")
@@ -237,7 +243,8 @@ struct EscapeSequence: ExpressibleByStringArgument {
     self.value = value
     self.ascii = String(Unicode.Scalar(value + 64))
   }
-  
+
+  nonisolated(unsafe)
   private static let regex = Regex {
     "\\"
     Capture(Repeat("0"..."7", count: 3)) {
@@ -247,8 +254,8 @@ struct EscapeSequence: ExpressibleByStringArgument {
 }
 
 // MARK: - Settings
-struct Settings {
-  
+struct Settings: Sendable {
+
   var dummy: Bool = false
   // Windows Layout
   var layout = WindowLayoutManager.Config()
