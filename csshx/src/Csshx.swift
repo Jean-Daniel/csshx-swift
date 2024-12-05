@@ -32,4 +32,3 @@ struct Csshx {
     Launcher.main(Array(args))
   }
 }
-

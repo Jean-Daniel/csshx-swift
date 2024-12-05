@@ -81,7 +81,7 @@ public struct Launcher: ParsableCommand, Sendable {
       Foundation.exit(1)
     }
     
-    let csshx = URL(filePath: CommandLine.arguments[0]).standardizedFileURL
+    let csshx = CommandLine.executableURL()
     var args: [String] = [
       csshx.path, "--", "controller",
       "--launchpid", "\(getpid())",

@@ -124,6 +124,7 @@ class WindowLayoutManager {
       return
     }
 
+    // FIXME: brings window front if already shown
     tab.window.miniaturized = false
 
     // find on which screen the controller currently is.
@@ -194,12 +195,11 @@ class WindowLayoutManager {
         guard let tab = hosts[hostId]?.tab else { continue }
 
         tab.window.zoomed = false
-        tab.window.visible = true
+        // tab.window.visible = false // looks better if hidden while resized
         tab.window.miniaturized = false
-        tab.window.frontmost = true
         // Layout from top to bottom
         tab.window.frame = CGRect(x: x, y: y, width: width, height: height)
-
+        tab.window.frontmost = true
         x += width
       }
       y -= height

@@ -267,7 +267,7 @@ extension Controller {
     host.whenDone = done
     hosts.append(host)
     
-    let csshx = URL(filePath: CommandLine.arguments[0]).standardizedFileURL
+    let csshx = CommandLine.executableURL()
     var args = [
       csshx.path, "--", "host",
       "--ssh", settings.ssh,

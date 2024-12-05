@@ -84,7 +84,7 @@ static OSStatus GetResizableWindows(AEDesc *windows) {
   // and make the apple event handling failing with a -10000 error.
   // Fortunately, that window is the only one that is not closeable/resizable, so can be filtered out.
   AEDesc windows = WBAEEmptyDesc();
-#if 0
+#if 1
   // all windows (from current application)
   err = WBAECreateIndexObjectSpecifier(cWindow, kAEAll, NULL, &windows);
 #else

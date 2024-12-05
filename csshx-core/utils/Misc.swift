@@ -41,6 +41,22 @@ extension POSIXError {
   }
 }
 
+extension CommandLine {
+
+  // Note: This is the only reliable way as trying to use cwd and/or argv[0] will fails when
+  // the process is called by a shell, that performs $PATH resolution.
+  static func executableURL() -> URL {
+    var buf = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+    var bufSize = UInt32(buf.count)
+    let success = _NSGetExecutablePath(&buf, &bufSize) >= 0
+    if !success {
+      buf = [CChar](repeating: 0, count: Int(bufSize))
+      guard _NSGetExecutablePath(&buf, &bufSize) >= 0 else { fatalError() }
+    }
+    return URL(fileURLWithFileSystemRepresentation: buf, isDirectory: false, relativeTo: nil).standardizedFileURL
+  }
+}
+
 func fwrite(str: String, file: UnsafeMutablePointer<FILE>) {
   var data = str
   let _ = data.withUTF8 { ptr in

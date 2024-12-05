@@ -624,7 +624,7 @@
 			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.3;
+				minimumVersion = 1.5.0;
 			};
 		};
 		1B8F23002AE3C9FB000B4E93 /* XCRemoteSwiftPackageReference "swift-system" */ = {
@@ -632,7 +632,7 @@
 			repositoryURL = "https://github.com/apple/swift-system.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.1;
+				minimumVersion = 1.4.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
